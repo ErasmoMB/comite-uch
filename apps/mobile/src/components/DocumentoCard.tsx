@@ -1,6 +1,6 @@
 // src/components/DocumentoCard.tsx
 import { useState } from 'react'
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { formatoDocumento, MAX_SIZE_MB } from '../lib/documentFormats'
 import { plantillaUrl } from '../lib/http'
 import { colors } from '../lib/theme'
@@ -18,7 +18,14 @@ export function GuiaNombresAlerta({ guia }: { guia: GuiaNombresDto }) {
     <View style={s.alerta}>
       <Text style={s.alertaTitulo}>📂 Nombre de los archivos (importante)</Text>
       <Text style={s.alertaTexto}>{guia.texto}</Text>
-      <Pressable onPress={() => Linking.openURL(plantillaUrl(guia.key, 'ver'))} hitSlop={6}>
+      <Pressable
+        onPress={() =>
+          Linking.openURL(plantillaUrl(guia.key, 'ver')).catch(() =>
+            Alert.alert('No se pudo abrir el enlace'),
+          )
+        }
+        hitSlop={6}
+      >
         <Text style={s.link}>Ver guía</Text>
       </Pressable>
     </View>
@@ -77,7 +84,11 @@ export function DocumentoCard({
 
       {doc.plantilla && (
         <Pressable
-          onPress={() => Linking.openURL(plantillaUrl(doc.plantilla!.key, doc.plantilla!.accion))}
+          onPress={() =>
+            Linking.openURL(plantillaUrl(doc.plantilla!.key, doc.plantilla!.accion)).catch(() =>
+              Alert.alert('No se pudo abrir el enlace'),
+            )
+          }
           hitSlop={6}
         >
           <Text style={s.link}>
