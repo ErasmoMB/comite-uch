@@ -1,0 +1,227 @@
+// Esquema Prisma para la base de datos Supabase Postgres existente (ya
+// poblada y en uso por el backend Python/FastAPI en `comite/backend`).
+//
+// IMPORTANTE: los nombres/tipos/nullability de cada columna fueron
+// verificados con `npx prisma db pull --print` (introspección de solo
+// lectura) contra la base real de produccion, no solo contra el modelo
+// Python. Donde el modelo Python (`app/models/__init__.py`) definia un
+// default a nivel de aplicacion (ej. `Column(Boolean, default=True)`)
+// pero la base real NO tiene un DEFAULT a nivel de columna, este esquema
+// refleja la realidad de la base (columna nullable sin @default) para que
+// `prisma db push` contra el schema "test" produzca una estructura
+// estructuralmente identica a produccion. Los defaults de aplicacion se
+// aplicaran en la capa de servicio de NestJS, igual que hace hoy el
+// backend Python a nivel de ORM.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Configuracion {
+  clave     String    @id @db.VarChar(100)
+  valor     String?
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  @@map("configuracion")
+}
+
+model User {
+  id               Int       @id @default(autoincrement())
+  email            String    @unique(map: "ix_users_email") @db.VarChar(255)
+  passwordHash     String    @map("password_hash") @db.VarChar(255)
+  nombre           String    @db.VarChar(255)
+  apellido         String    @db.VarChar(255)
+  rol              String    @db.VarChar(50)
+  activo           Boolean?
+  especialidad     String?   @db.VarChar(255)
+  cargaTrabajo     Int?      @map("carga_trabajo")
+  conflictoInteres Boolean?  @map("conflicto_interes")
+  codigoEstudiante String?   @map("codigo_estudiante") @db.VarChar(50)
+  laboratorio      String?   @db.VarChar(255)
+  createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt        DateTime? @map("updated_at") @db.Timestamp(6)
+
+  expedientes             Expediente[]
+  evaluaciones            Evaluacion[]
+  notificaciones          Notificacion[]
+  bitacora                Bitacora[]
+  mensajesComoAutor       MensajeChat[] @relation("MensajeChatAutor")
+  mensajesComoSolicitante MensajeChat[] @relation("MensajeChatSolicitante")
+  codigosRecuperacion     PasswordResetCode[]
+
+  @@map("users")
+}
+
+// Códigos OTP de 6 dígitos para "Recuperar contraseña" -- se guarda el hash
+// (nunca el código en texto plano), con expiración corta y de un solo uso.
+model PasswordResetCode {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  codeHash  String    @map("code_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at") @db.Timestamp(6)
+  usado     Boolean   @default(false)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("password_reset_codes")
+}
+
+model Expediente {
+  id               Int       @id @default(autoincrement())
+  codigoUnico      String?   @unique(map: "ix_expedientes_codigo_unico") @map("codigo_unico") @db.VarChar(50)
+  tituloProtocolo  String    @map("titulo_protocolo")
+  investigadorId   Int       @map("investigador_id")
+  tipoTramite      String?   @map("tipo_tramite") @db.VarChar(100)
+  facultad         String?   @db.VarChar(255)
+  modalidad        String?   @db.VarChar(30)
+  programaEstudios String?   @map("programa_estudios") @db.VarChar(100)
+  ciclo            String?   @db.VarChar(20)
+  nivelPosgrado    String?   @map("nivel_posgrado") @db.VarChar(50)
+  numeroActa       String?   @map("numero_acta") @db.VarChar(50)
+  tituloAnterior   String?   @map("titulo_anterior")
+  tituloNuevo      String?   @map("titulo_nuevo")
+  proyectoOrigenId Int?      @map("proyecto_origen_id")
+  estado           String?   @db.VarChar(50)
+  fechaEnvio       DateTime? @map("fecha_envio") @db.Timestamp(6)
+  fechaCreacion    DateTime? @default(now()) @map("fecha_creacion") @db.Timestamp(6)
+  updatedAt        DateTime? @map("updated_at") @db.Timestamp(6)
+
+  investigador    User                  @relation(fields: [investigadorId], references: [id])
+  proyectoOrigen  Expediente?           @relation("ExpedienteCambioTitulo", fields: [proyectoOrigenId], references: [id])
+  cambiosDeTitulo Expediente[]          @relation("ExpedienteCambioTitulo")
+  autores         AutorExpediente[]
+  documentos      Documento[]
+  evaluaciones    Evaluacion[]
+  notificaciones  Notificacion[]
+  bitacora        Bitacora[]
+  historial       HistorialExpediente[]
+
+  @@map("expedientes")
+}
+
+model AutorExpediente {
+  id               Int      @id @default(autoincrement())
+  expedienteId     Int      @map("expediente_id")
+  orden            Int?
+  apellidosNombres String   @map("apellidos_nombres") @db.VarChar(255)
+  codigoEstudiante String?  @map("codigo_estudiante") @db.VarChar(50)
+  correo           String?  @db.VarChar(255)
+  telefono         String?  @db.VarChar(50)
+  esPrincipal      Boolean? @map("es_principal")
+
+  expediente Expediente @relation(fields: [expedienteId], references: [id])
+
+  @@map("autores_expediente")
+}
+
+model Documento {
+  id            Int       @id @default(autoincrement())
+  expedienteId  Int       @map("expediente_id")
+  nombreArchivo String    @map("nombre_archivo") @db.VarChar(255)
+  tipoDocumento String    @map("tipo_documento") @db.VarChar(100)
+  rutaArchivo   String?   @map("ruta_archivo") @db.VarChar(500)
+  version       Int?
+  esObligatorio Boolean?  @map("es_obligatorio")
+  validado      Boolean?
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  expediente Expediente @relation(fields: [expedienteId], references: [id])
+
+  @@map("documentos")
+}
+
+model Evaluacion {
+  id               Int       @id @default(autoincrement())
+  expedienteId     Int       @map("expediente_id")
+  evaluadorId      Int       @map("evaluador_id")
+  recommendation   String?
+  observaciones    String?
+  completa         Boolean?
+  conflictoInteres Boolean?  @map("conflicto_interes")
+  fechaAsignacion  DateTime? @default(now()) @map("fecha_asignacion") @db.Timestamp(6)
+  fechaEnvio       DateTime? @map("fecha_envio") @db.Timestamp(6)
+  puntajeTotal     Int?      @map("puntaje_total")
+  resultado        String?   @db.VarChar(50)
+  rubricaPdfPath   String?   @map("rubrica_pdf_path") @db.VarChar(500)
+  dictamenPdfPath  String?   @map("dictamen_pdf_path") @db.VarChar(500)
+
+  expediente Expediente          @relation(fields: [expedienteId], references: [id])
+  evaluador  User                @relation(fields: [evaluadorId], references: [id])
+  criterios  EvaluacionCriterio[]
+
+  @@map("evaluaciones")
+}
+
+model EvaluacionCriterio {
+  id           Int     @id @default(autoincrement())
+  evaluacionId Int     @map("evaluacion_id")
+  criterioKey  String  @map("criterio_key") @db.VarChar(50)
+  puntaje      Int
+  observacion  String?
+
+  evaluacion Evaluacion @relation(fields: [evaluacionId], references: [id])
+
+  @@map("evaluacion_criterios")
+}
+
+model Notificacion {
+  id           Int       @id @default(autoincrement())
+  usuarioId    Int       @map("usuario_id")
+  expedienteId Int?      @map("expediente_id")
+  titulo       String    @db.VarChar(255)
+  mensaje      String
+  leida        Boolean?
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  usuario    User        @relation(fields: [usuarioId], references: [id])
+  expediente Expediente? @relation(fields: [expedienteId], references: [id])
+
+  @@map("notificaciones")
+}
+
+model MensajeChat {
+  id            Int       @id @default(autoincrement())
+  solicitanteId Int       @map("solicitante_id")
+  autorId       Int       @map("autor_id")
+  texto         String
+  leido         Boolean?
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  solicitante User @relation("MensajeChatSolicitante", fields: [solicitanteId], references: [id])
+  autor       User @relation("MensajeChatAutor", fields: [autorId], references: [id])
+
+  @@map("mensajes_chat")
+}
+
+model Bitacora {
+  id           Int       @id @default(autoincrement())
+  expedienteId Int       @map("expediente_id")
+  accion       String    @db.VarChar(255)
+  detalle      String?
+  usuarioId    Int?      @map("usuario_id")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  expediente Expediente @relation(fields: [expedienteId], references: [id])
+  usuario    User?      @relation(fields: [usuarioId], references: [id])
+
+  @@map("bitacora")
+}
+
+model HistorialExpediente {
+  id             Int       @id @default(autoincrement())
+  expedienteId   Int       @map("expediente_id")
+  estadoAnterior String?   @map("estado_anterior") @db.VarChar(50)
+  estadoNuevo    String?   @map("estado_nuevo") @db.VarChar(50)
+  observaciones  String?
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  expediente Expediente @relation(fields: [expedienteId], references: [id])
+
+  @@map("historial_expediente")
+}

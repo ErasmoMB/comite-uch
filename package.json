@@ -1,0 +1,22 @@
+{
+  "name": "comite-uch",
+  "private": true,
+  "packageManager": "npm@11.9.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "predev": "npm run build -w @comite/shared",
+    "dev": "start \"API\" cmd /c \"npm run dev -w @comite/api\" & npm run dev -w @comite/web",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "turbo": "^2.10.4"
+  }
+}

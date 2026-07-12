@@ -1,0 +1,25 @@
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+*.tsbuildinfo
+
+# Turborepo
+.turbo/
+
+# Variables de entorno (contienen credenciales reales de Supabase/Resend)
+.env
+.env.*
+!.env.example
+
+# Herramientas de desarrollo / pruebas
+.playwright-mcp/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / IDEs
+.DS_Store
+.idea/

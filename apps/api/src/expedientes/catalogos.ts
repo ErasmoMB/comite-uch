@@ -1,0 +1,80 @@
+import {
+  CICLOS as SHARED_CICLOS,
+  CICLOS_CAMBIO_TITULO as SHARED_CICLOS_CAMBIO_TITULO,
+  DOC_PROYECTO_PDF as SHARED_DOC_PROYECTO_PDF,
+  DOC_PROYECTO_WORD as SHARED_DOC_PROYECTO_WORD,
+  DOC_SOLICITUD_EVALUACION as SHARED_DOC_SOLICITUD_EVALUACION,
+  DOC_CARTA_APROBACION as SHARED_DOC_CARTA_APROBACION,
+  DOC_BOLETA_PAGO as SHARED_DOC_BOLETA_PAGO,
+  DOC_SOLICITUD_CAMBIO_TITULO as SHARED_DOC_SOLICITUD_CAMBIO_TITULO,
+  DOCUMENTO_LABELS as SHARED_DOCUMENTO_LABELS,
+  DOCUMENTO_INDICACIONES as SHARED_DOCUMENTO_INDICACIONES,
+  DOCUMENTO_PLANTILLA as SHARED_DOCUMENTO_PLANTILLA,
+  DOCUMENTOS_REQUERIDOS as SHARED_DOCUMENTOS_REQUERIDOS,
+  ESTADOS_ELEGIBLE_CAMBIO_TITULO as SHARED_ESTADOS_ELEGIBLE_CAMBIO_TITULO,
+  ESTADO_EXPEDIENTE as SHARED_ESTADO_EXPEDIENTE,
+  GUIA_NOMBRES as SHARED_GUIA_NOMBRES,
+  MODALIDAD as SHARED_MODALIDAD,
+  NIVELES_POSGRADO as SHARED_NIVELES_POSGRADO,
+  PROGRAMAS_ESTUDIOS as SHARED_PROGRAMAS_ESTUDIOS,
+  ROL_A_MODALIDAD as SHARED_ROL_A_MODALIDAD,
+  TIPO_TRAMITE as SHARED_TIPO_TRAMITE,
+} from '@comite/shared';
+
+export const ROL_A_MODALIDAD = SHARED_ROL_A_MODALIDAD;
+export const MODALIDAD = SHARED_MODALIDAD;
+export const TIPO_TRAMITE = SHARED_TIPO_TRAMITE;
+export const ESTADO_EXPEDIENTE = SHARED_ESTADO_EXPEDIENTE;
+export const PROGRAMAS_ESTUDIOS = SHARED_PROGRAMAS_ESTUDIOS;
+export const CICLOS = SHARED_CICLOS;
+export const CICLOS_CAMBIO_TITULO = SHARED_CICLOS_CAMBIO_TITULO;
+export const NIVELES_POSGRADO = SHARED_NIVELES_POSGRADO;
+
+export const DOC_PROYECTO_PDF = SHARED_DOC_PROYECTO_PDF;
+export const DOC_PROYECTO_WORD = SHARED_DOC_PROYECTO_WORD;
+export const DOC_SOLICITUD_EVALUACION = SHARED_DOC_SOLICITUD_EVALUACION;
+export const DOC_CARTA_APROBACION = SHARED_DOC_CARTA_APROBACION;
+export const DOC_BOLETA_PAGO = SHARED_DOC_BOLETA_PAGO;
+export const DOC_SOLICITUD_CAMBIO_TITULO = SHARED_DOC_SOLICITUD_CAMBIO_TITULO;
+
+export const DOCUMENTO_LABELS = SHARED_DOCUMENTO_LABELS;
+export const DOCUMENTO_INDICACIONES = SHARED_DOCUMENTO_INDICACIONES;
+export const DOCUMENTO_PLANTILLA = SHARED_DOCUMENTO_PLANTILLA;
+export const GUIA_NOMBRES = SHARED_GUIA_NOMBRES;
+export const DOCUMENTOS_REQUERIDOS = SHARED_DOCUMENTOS_REQUERIDOS;
+export const ESTADOS_ELEGIBLE_CAMBIO_TITULO = SHARED_ESTADOS_ELEGIBLE_CAMBIO_TITULO;
+
+// ==================== SERVER-SPECIFIC: FORMATOS (MIME TYPES) ====================
+
+const PDF = new Set(['application/pdf']);
+const WORD = new Set([
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+const IMG = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp']);
+
+export const DOCUMENTO_FORMATOS: Record<
+  string,
+  { mimes: Set<string>; ext: Set<string>; desc: string }
+> = {
+  [DOC_PROYECTO_PDF]: { mimes: PDF, ext: new Set(['.pdf']), desc: 'PDF' },
+  [DOC_PROYECTO_WORD]: { mimes: WORD, ext: new Set(['.doc', '.docx']), desc: 'Word (.doc, .docx)' },
+  [DOC_SOLICITUD_EVALUACION]: { mimes: PDF, ext: new Set(['.pdf']), desc: 'PDF' },
+  [DOC_CARTA_APROBACION]: { mimes: PDF, ext: new Set(['.pdf']), desc: 'PDF' },
+  [DOC_BOLETA_PAGO]: {
+    mimes: new Set([...PDF, ...IMG]),
+    ext: new Set(['.pdf', '.png', '.jpg', '.jpeg', '.webp']),
+    desc: 'PDF o imagen',
+  },
+  [DOC_SOLICITUD_CAMBIO_TITULO]: { mimes: PDF, ext: new Set(['.pdf']), desc: 'PDF' },
+};
+
+// Arma la info de un documento para el formulario dinámico.
+export function docInfo(tipo: string) {
+  return {
+    tipo,
+    label: DOCUMENTO_LABELS[tipo] ?? tipo,
+    indicaciones: DOCUMENTO_INDICACIONES[tipo] ?? [],
+    plantilla: DOCUMENTO_PLANTILLA[tipo] ?? null,
+  };
+}
