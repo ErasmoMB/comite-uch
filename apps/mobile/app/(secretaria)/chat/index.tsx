@@ -120,7 +120,7 @@ export default function ChatLista() {
             <Text style={s.sheetTitle}>Nueva conversación</Text>
             {cargandoSolicitantes && <Loading label="Cargando solicitantes…" />}
             {!cargandoSolicitantes && (
-              <ScrollView>
+              <ScrollView style={s.pickerScroll}>
                 {solicitantes.map(so => (
                   <Pressable
                     key={so.id}
@@ -160,6 +160,7 @@ const s = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(8,32,74,0.45)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: '#fff', borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 18, gap: 4, maxHeight: '70%' },
   sheetTitle: { fontSize: 16, fontWeight: '700', color: colors.navy, marginBottom: 8 },
+  pickerScroll: { flex: 1 },
   pickerRow: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.lineSoft },
   pickerNombre: { fontSize: 14, fontWeight: '600', color: colors.ink },
   pickerDetalle: { fontSize: 11.5, color: colors.slate500, marginTop: 2 },
