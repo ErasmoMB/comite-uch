@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Card, ErrorText, Input, Loading, StatusBadge } from '../../src/components/ui'
+import { Card, ErrorText, Input, Loading, Screen, StatusBadge } from '../../src/components/ui'
 import Avatar from '../../src/components/Avatar'
 import { colors } from '../../src/lib/theme'
 import { formatearFecha } from '../../src/lib/dates'
@@ -61,44 +61,46 @@ export default function Bandeja() {
         </Pressable>
       </View>
 
-      <View style={s.filtros}>
-        <Input
-          placeholder="Buscar por código, título o remitente…"
-          value={busqueda}
-          onChangeText={setBusqueda}
-          autoCapitalize="none"
-        />
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Input style={{ flex: 1 }} placeholder="Desde AAAA-MM-DD" value={fechaDesde} onChangeText={setFechaDesde} autoCapitalize="none" />
-          <Input style={{ flex: 1 }} placeholder="Hasta AAAA-MM-DD" value={fechaHasta} onChangeText={setFechaHasta} autoCapitalize="none" />
+      <Screen>
+        <View style={s.filtros}>
+          <Input
+            placeholder="Buscar por código, título o remitente…"
+            value={busqueda}
+            onChangeText={setBusqueda}
+            autoCapitalize="none"
+          />
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Input style={{ flex: 1 }} placeholder="Desde AAAA-MM-DD" value={fechaDesde} onChangeText={setFechaDesde} autoCapitalize="none" />
+            <Input style={{ flex: 1 }} placeholder="Hasta AAAA-MM-DD" value={fechaHasta} onChangeText={setFechaHasta} autoCapitalize="none" />
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={s.contador}>
+              {cargando ? 'Cargando…' : `${pendientes.length} expediente(s) pendiente(s)`}
+            </Text>
+            <Pressable onPress={limpiarFiltros}><Text style={s.limpiar}>Limpiar</Text></Pressable>
+          </View>
         </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={s.contador}>
-            {cargando ? 'Cargando…' : `${pendientes.length} expediente(s) pendiente(s)`}
-          </Text>
-          <Pressable onPress={limpiarFiltros}><Text style={s.limpiar}>Limpiar</Text></Pressable>
-        </View>
-      </View>
 
-      <View style={s.lista}>
-        {cargando && <Loading label="Cargando bandeja…" />}
-        {!cargando && !!error && <View style={{ padding: 14 }}><ErrorText>{error}</ErrorText></View>}
-        {!cargando && !error && pendientes.map(e => (
-          <Pressable key={e.id} onPress={() => router.push(`/(secretaria)/revision/${e.id}`)}>
-            <Card>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <Text numberOfLines={1} style={s.titulo}>{e.tituloProtocolo}</Text>
-                <StatusBadge estado={e.estado} />
-              </View>
-              <Text style={s.remitente}>{e.investigadorNombre ?? 'Solicitante desconocido'}</Text>
-              <Text style={s.meta}>{(e.codigoUnico ?? '—')} · {formatearFecha(e.fechaEnvio)}</Text>
-            </Card>
-          </Pressable>
-        ))}
-        {!cargando && !error && pendientes.length === 0 && (
-          <Text style={s.vacio}>No hay expedientes pendientes de gestión administrativa.</Text>
-        )}
-      </View>
+        <View style={s.lista}>
+          {cargando && <Loading label="Cargando bandeja…" />}
+          {!cargando && !!error && <View style={{ padding: 14 }}><ErrorText>{error}</ErrorText></View>}
+          {!cargando && !error && pendientes.map(e => (
+            <Pressable key={e.id} onPress={() => router.push(`/(secretaria)/revision/${e.id}`)}>
+              <Card>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                  <Text numberOfLines={1} style={s.titulo}>{e.tituloProtocolo}</Text>
+                  <StatusBadge estado={e.estado} />
+                </View>
+                <Text style={s.remitente}>{e.investigadorNombre ?? 'Solicitante desconocido'}</Text>
+                <Text style={s.meta}>{(e.codigoUnico ?? '—')} · {formatearFecha(e.fechaEnvio)}</Text>
+              </Card>
+            </Pressable>
+          ))}
+          {!cargando && !error && pendientes.length === 0 && (
+            <Text style={s.vacio}>No hay expedientes pendientes de gestión administrativa.</Text>
+          )}
+        </View>
+      </Screen>
     </View>
   )
 }
@@ -106,10 +108,10 @@ export default function Bandeja() {
 const s = StyleSheet.create({
   header: { backgroundColor: '#fff', paddingHorizontal: 16, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: colors.lineSoft },
   headerTitle: { fontSize: 17, fontWeight: '700', color: colors.ink },
-  filtros: { padding: 16, gap: 10 },
+  filtros: { gap: 10 },
   contador: { fontSize: 12.5, fontWeight: '500', color: colors.slate400 },
   limpiar: { fontSize: 13, fontWeight: '600', color: colors.primary },
-  lista: { paddingHorizontal: 16, gap: 10, flex: 1 },
+  lista: { gap: 10 },
   titulo: { flex: 1, fontSize: 14, fontWeight: '700', color: colors.ink },
   remitente: { fontSize: 12.5, fontWeight: '500', color: colors.slate500, marginBottom: 4 },
   meta: { fontSize: 12, fontWeight: '500', color: colors.slate400 },
