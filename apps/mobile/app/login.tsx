@@ -1,6 +1,6 @@
 // app/login.tsx
 import { useState } from 'react'
-import { Link, useRouter, type Href } from 'expo-router'
+import { Link, useRouter } from 'expo-router'
 import { StyleSheet, Text, View } from 'react-native'
 import { Button, ErrorText, Field, Input, Logo } from '../src/components/ui'
 import { colors } from '../src/lib/theme'
@@ -25,9 +25,7 @@ export default function Login() {
     setEnviando(true)
     try {
       const u = await login(correo.trim(), clave)
-      // Cast: expo-router typed-routes solo conoce rutas existentes en app/.
-      // '/(secretaria)' recién existe físicamente desde Fase 4 Task 2.
-      router.replace(homeGroupForRole(u.rol) as Href)
+      router.replace(homeGroupForRole(u.rol))
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo iniciar sesión. Intenta de nuevo.')
     } finally {
