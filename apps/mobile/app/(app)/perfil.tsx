@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'expo-router'
 import { StyleSheet, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button, Card, Screen } from '../../src/components/ui'
 import Avatar from '../../src/components/Avatar'
 import { colors } from '../../src/lib/theme'
@@ -18,6 +19,7 @@ interface Stat {
 export default function Perfil() {
   const { usuario, logout } = useApp()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const [stats, setStats] = useState<Stat[]>([])
   const [totalRegistros, setTotalRegistros] = useState<number | null>(null)
 
@@ -60,7 +62,7 @@ export default function Perfil() {
 
   return (
     <Screen>
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 6 }]}>
         <Avatar nombres={usuario?.nombres} apellidos={usuario?.apellidos} size={72} />
         <Text style={s.nombre}>{usuario?.nombres} {usuario?.apellidos}</Text>
         <View style={s.badge}>
@@ -94,7 +96,7 @@ export default function Perfil() {
 }
 
 const s = StyleSheet.create({
-  header: { alignItems: 'center', gap: 9, paddingVertical: 6 },
+  header: { alignItems: 'center', gap: 9, paddingBottom: 6 },
   nombre: { fontSize: 17, fontWeight: '700', color: colors.ink },
   badge: { backgroundColor: colors.blue50, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
   badgeText: { fontSize: 12, fontWeight: '600', color: colors.primary },

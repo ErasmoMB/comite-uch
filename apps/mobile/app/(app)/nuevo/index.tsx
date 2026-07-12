@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button, Card, ErrorText, Field, Input, Loading, Screen, Stepper, TextArea } from '../../../src/components/ui'
 import { DocumentoCard, GuiaNombresAlerta, type DocEstado } from '../../../src/components/DocumentoCard'
 import { colors } from '../../../src/lib/theme'
@@ -23,6 +24,7 @@ interface AutorForm {
 export default function NuevoProyecto() {
   const { usuario } = useApp()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
 
   const [catalogos, setCatalogos] = useState<CatalogosDto | null>(null)
   const [cargandoCatalogos, setCargandoCatalogos] = useState(true)
@@ -177,7 +179,7 @@ export default function NuevoProyecto() {
   if (cargandoCatalogos) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
-        <View style={s.header}><Text style={s.headerTitle}>{tituloHeader}</Text></View>
+        <View style={[s.header, { paddingTop: insets.top + 14 }]}><Text style={s.headerTitle}>{tituloHeader}</Text></View>
         <Loading label="Cargando…" />
       </View>
     )
@@ -186,7 +188,7 @@ export default function NuevoProyecto() {
   if (errorCatalogos) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
-        <View style={s.header}><Text style={s.headerTitle}>{tituloHeader}</Text></View>
+        <View style={[s.header, { paddingTop: insets.top + 14 }]}><Text style={s.headerTitle}>{tituloHeader}</Text></View>
         <Screen><ErrorText>{errorCatalogos}</ErrorText></Screen>
       </View>
     )
@@ -195,7 +197,7 @@ export default function NuevoProyecto() {
   if (!modalidad) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
-        <View style={s.header}><Text style={s.headerTitle}>{tituloHeader}</Text></View>
+        <View style={[s.header, { paddingTop: insets.top + 14 }]}><Text style={s.headerTitle}>{tituloHeader}</Text></View>
         <Screen><Text style={s.muted}>Tu rol no puede enviar proyectos al comité de ética.</Text></Screen>
       </View>
     )
@@ -203,7 +205,7 @@ export default function NuevoProyecto() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 14 }]}>
         <Text style={s.headerTitle}>{tituloHeader}</Text>
       </View>
       <Stepper pasos={PASOS} actual={paso} />
@@ -444,7 +446,7 @@ function Selector({
 }
 
 const s = StyleSheet.create({
-  header: { backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.lineSoft },
+  header: { backgroundColor: '#fff', paddingHorizontal: 16, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: colors.lineSoft },
   headerTitle: { fontSize: 17, fontWeight: '700', color: colors.ink },
   muted: { fontSize: 13, color: colors.slate500 },
   seccionTitulo: { fontSize: 13, fontWeight: '700', color: colors.navy },

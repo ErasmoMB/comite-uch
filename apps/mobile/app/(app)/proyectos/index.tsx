@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'expo-router'
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Card, ErrorText, Field, Input, Loading, Screen, StatusBadge } from '../../../src/components/ui'
 import Avatar from '../../../src/components/Avatar'
 import { colors } from '../../../src/lib/theme'
@@ -16,6 +17,7 @@ import { useConfirm } from '../../../src/state/ConfirmContext'
 export default function Proyectos() {
   const { usuario } = useApp()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const confirmar = useConfirm()
   const [proyectos, setProyectos] = useState<Proyecto[]>([])
   const [cargando, setCargando] = useState(true)
@@ -87,7 +89,7 @@ export default function Proyectos() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 14 }]}>
         <Text style={s.headerTitle}>Mis proyectos</Text>
         <Pressable onPress={() => router.push('/(app)/perfil')}>
           <Avatar nombres={usuario?.nombres} apellidos={usuario?.apellidos} />
@@ -169,7 +171,7 @@ export default function Proyectos() {
 }
 
 const s = StyleSheet.create({
-  header: { backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: colors.lineSoft },
+  header: { backgroundColor: '#fff', paddingHorizontal: 16, paddingBottom: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: colors.lineSoft },
   headerTitle: { fontSize: 17, fontWeight: '700', color: colors.ink },
   link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
   linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '600' },

@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Input } from '../../src/components/ui'
 import { colors } from '../../src/lib/theme'
 import { ApiError } from '../../src/lib/http'
@@ -20,6 +21,7 @@ const INTERVALO_POLLING = 4000
 
 export default function Consultas() {
   const { usuario } = useApp()
+  const insets = useSafeAreaInsets()
   const [mensajes, setMensajes] = useState<MensajeChatDto[]>([])
   const [texto, setTexto] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -80,7 +82,7 @@ export default function Consultas() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <View style={s.container}>
-        <View style={s.header}>
+        <View style={[s.header, { paddingTop: insets.top + 12 }]}>
           <View style={s.avatar}>
             <Text style={s.avatarText}>ST</Text>
           </View>
@@ -137,7 +139,7 @@ const s = StyleSheet.create({
   header: {
     backgroundColor: '#fff',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
