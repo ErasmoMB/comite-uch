@@ -53,11 +53,13 @@ export default function CambiarTitulo() {
   const autorPrincipalLabel = esInterno ? 'Investigador principal' : 'Autor principal'
   const agregarAutorLabel = esInterno ? '+ Agregar coautor' : '+ Agregar autor'
 
-  function aplicarOrigen(e: ElegibleCambioTituloDto) {
+  function aplicarOrigen(e: ElegibleCambioTituloDto, programasOverride?: string[], ciclosOverride?: string[]) {
+    const programasActuales = programasOverride ?? programas
+    const ciclosActuales = ciclosOverride ?? ciclos
     setOrigenId(e.id)
     setTituloNuevo(e.titulo)
-    setPrograma(e.programaEstudios || programas[0] || '')
-    setCiclo(e.ciclo && ciclos.includes(e.ciclo) ? e.ciclo : ciclos[0] || '')
+    setPrograma(e.programaEstudios || programasActuales[0] || '')
+    setCiclo(e.ciclo && ciclosActuales.includes(e.ciclo) ? e.ciclo : ciclosActuales[0] || '')
     setAutores(
       e.autores.length > 0
         ? e.autores.map(a => ({ apellidosNombres: a.apellidosNombres, codigoEstudiante: a.codigoEstudiante, correo: a.correo }))
@@ -74,13 +76,15 @@ export default function CambiarTitulo() {
           expedientesService.getCatalogos(),
         ])
         if (!activo) return
+        const programasFrescos = catalogosRes.programasEstudios ?? []
+        const ciclosFrescos = catalogosRes.cambioTitulo?.ciclos ?? []
         setElegibles(elegiblesRes)
-        setProgramas(catalogosRes.programasEstudios ?? [])
-        setCiclos(catalogosRes.cambioTitulo?.ciclos ?? [])
+        setProgramas(programasFrescos)
+        setCiclos(ciclosFrescos)
         setModalidad(catalogosRes.modalidad)
         setDocumentoInfo(catalogosRes.cambioTitulo?.documento ?? null)
         const preseleccionado = elegiblesRes.find(e => e.id === idPreseleccionado)
-        if (preseleccionado) aplicarOrigen(preseleccionado)
+        if (preseleccionado) aplicarOrigen(preseleccionado, programasFrescos, ciclosFrescos)
       } catch (err) {
         if (activo) setErrorCarga(err instanceof ApiError ? err.message : 'No se pudieron cargar los proyectos elegibles.')
       } finally {
