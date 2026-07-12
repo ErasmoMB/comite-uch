@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { Link, useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button, Card, ErrorText, Field, Input, Screen } from '../src/components/ui'
 import { colors } from '../src/lib/theme'
 import { ROL_LABEL, ROLES_AUTO_REGISTRO, type Rol } from '../src/data/types'
@@ -13,6 +14,7 @@ const OPCIONES_ROL = ROLES_AUTO_REGISTRO.map(rol => ({ value: rol as Rol, label:
 export default function Registro() {
   const { registrar } = useApp()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const [f, setF] = useState({ nombres: '', apellidos: '', correo: '', rol: OPCIONES_ROL[0].value, codigo: '', clave: '', confirmar: '' })
   const [error, setError] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -45,7 +47,7 @@ export default function Registro() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 14 }]}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/login'))} style={s.backBtn} hitSlop={8}>
           <Text style={s.backText}>‹</Text>
         </Pressable>
@@ -108,7 +110,7 @@ export default function Registro() {
 const s = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 12, paddingVertical: 14, backgroundColor: '#fff',
+    paddingHorizontal: 12, paddingBottom: 14, backgroundColor: '#fff',
     borderBottomWidth: 1, borderBottomColor: colors.lineSoft,
   },
   backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },

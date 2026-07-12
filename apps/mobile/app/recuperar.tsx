@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react'
 import { Link, useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button, ErrorText, Field, Input, Screen } from '../src/components/ui'
 import { colors } from '../src/lib/theme'
 import { ApiError } from '../src/lib/http'
@@ -24,6 +25,7 @@ function Progreso({ actual }: { actual: number }) {
 
 export default function Recuperar() {
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const [paso, setPaso] = useState(1)
   const [correo, setCorreo] = useState('')
   const [codigo, setCodigo] = useState(['', '', '', '', '', ''])
@@ -98,7 +100,7 @@ export default function Recuperar() {
   }
 
   return (
-    <Screen>
+    <Screen style={{ paddingTop: insets.top + 16 }}>
       <Text style={s.title}>Recuperar contraseña</Text>
       <Progreso actual={paso} />
 

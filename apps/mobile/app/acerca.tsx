@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button, Card, Screen } from '../src/components/ui'
 import { colors } from '../src/lib/theme'
 
@@ -28,11 +29,12 @@ const FAQS = [
 
 export default function Acerca() {
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const [abierta, setAbierta] = useState<number | null>(null)
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 24 }]}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/login'))} style={s.backBtn} hitSlop={8}>
           <Text style={s.backText}>‹</Text>
         </Pressable>
@@ -72,7 +74,7 @@ export default function Acerca() {
 }
 
 const s = StyleSheet.create({
-  header: { backgroundColor: colors.navy, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 26 },
+  header: { backgroundColor: colors.navy, paddingHorizontal: 20, paddingBottom: 26 },
   backBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   backText: { color: '#fff', fontSize: 22, marginTop: -2 },
   logoBox: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },

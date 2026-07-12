@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Card, Loading, ErrorText, StatusBadge, Screen } from '../../src/components/ui'
 import Avatar from '../../src/components/Avatar'
 import { colors } from '../../src/lib/theme'
@@ -25,6 +26,7 @@ function useCuentaRegresiva() {
 export default function Dashboard() {
   const { usuario } = useApp()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const cr = useCuentaRegresiva()
   const [proyectos, setProyectos] = useState<Proyecto[]>([])
   const [cargando, setCargando] = useState(true)
@@ -55,7 +57,7 @@ export default function Dashboard() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 14 }]}>
         <View>
           <Text style={{ fontSize: 13, color: colors.slate500 }}>Buen día,</Text>
           <Text style={{ fontSize: 17, fontWeight: '700' }}>{usuario?.nombres} {usuario?.apellidos}</Text>
@@ -105,7 +107,7 @@ export default function Dashboard() {
   )
 }
 const s = StyleSheet.create({
-  header: { backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: colors.lineSoft },
+  header: { backgroundColor: '#fff', paddingHorizontal: 16, paddingBottom: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: colors.lineSoft },
   banner: { backgroundColor: colors.navy, borderRadius: 18, padding: 16 },
   bannerTitle: { color: '#fff', opacity: 0.85, fontSize: 13, fontWeight: '600', marginBottom: 10 },
   bannerBox: { flex: 1, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 10, paddingVertical: 9, alignItems: 'center' },
