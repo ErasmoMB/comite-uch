@@ -53,6 +53,10 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:8002
   `acerca` fuera del grupo autenticado; y dentro de `app/(app)/` el dashboard
   (`index`), `proyectos/` (lista y detalle `[id]`), `nuevo/` (wizard y éxito),
   `cambiar-titulo`, `consultas` y `perfil`, todos detrás de `_layout.tsx`.
+- `app/(secretaria)/` — grupo del rol Secretaría técnica (guard de sesión + Tabs de
+  3 pestañas): `index` (Bandeja de expedientes), `chat/` (lista `index` y hilo
+  `[solicitanteId]`), `perfil`, más la ruta oculta `revision/[id]`. La redirección
+  post-login elige el grupo según el rol (`src/lib/roles.ts` → `homeGroupForRole`).
 - `src/components/` — UI base (`ui.tsx`), `Avatar`, `TopBar`, `DocumentoCard`.
 - `src/data/` — tipos de dominio (`EstadoProyecto`, `Proyecto`, `Autor`,
   `Observacion`, etc.), espejo de `apps/web/src/data/types.ts`.
@@ -73,13 +77,25 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:8002
   contra la API real.
 - Sesión persistente vía `expo-secure-store`, manejo de 401 (redirige a login) y
   polling de consultas/chat.
+- Rol **Secretaría técnica**: Bandeja (lista/búsqueda/filtro de fecha), Revisión de
+  expediente (autores, documentos con apertura nativa vía `expo-file-system` +
+  `expo-sharing`, bitácora/historial, Admitir/Devolver), Chat (lista + hilo) y Perfil
+  con la rama de rol interno. Navegación por rol vía grupos de rutas separados.
 
 **Fuera de alcance (deliberado):**
 - Subida real de archivos con cámara/galería (`expo-image-picker`). La interfaz de
   servicio ya está lista (`registrarDocumento`/`uploadDocumento`), marcada con
   `// TODO Fase posterior`, pero sin integrar el picker nativo todavía.
 - El **recorrido manual del checklist E2E en un emulador o dispositivo Android real**
-  (Task 12, Step 2 del plan de build) queda pendiente: requiere un entorno con
+  (Fase 3, Task 12 Step 2 del plan de build) queda pendiente: requiere un entorno con
   Android Studio/emulador o un dispositivo físico con Expo Go, que no está disponible
   en el entorno donde se generó este build. Debe ejecutarlo alguien con acceso a un
   dispositivo/emulador antes de dar por cerrada la verificación E2E final.
+- El **recorrido manual del checklist E2E del rol Secretaría en Android real**
+  (Fase 4, Task 9 Step 3 del plan de build) también queda pendiente por el mismo
+  motivo: login directo al grupo `(secretaria)`, Bandeja, Revisión con apertura de
+  documentos vía share sheet nativo (verificando que el header `Authorization` llega),
+  Admitir/Devolver, Chat (lista + hilo), Perfil, y sobre todo la regresión del flujo
+  del Solicitante en `(app)` y el anti-loop de navegación por rol. Debe ejecutarlo
+  alguien con acceso a un dispositivo/emulador antes de dar por cerrada la
+  verificación E2E de Fase 4.
