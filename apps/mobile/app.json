@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Comité de Ética UCH",
+    "slug": "comite-etica-uch",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "comiteuch",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#08204a"
+    },
+    "android": {
+      "package": "pe.edu.uch.comite",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#08204a"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
