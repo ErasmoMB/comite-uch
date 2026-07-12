@@ -54,6 +54,8 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:8002
   (`index`), `proyectos/` (lista y detalle `[id]`), `nuevo/` (wizard y éxito),
   `cambiar-titulo`, `consultas` y `perfil`, todos detrás de `_layout.tsx`.
 - `src/components/` — UI base (`ui.tsx`), `Avatar`, `TopBar`, `DocumentoCard`.
+- `src/data/` — tipos de dominio (`EstadoProyecto`, `Proyecto`, `Autor`,
+  `Observacion`, etc.), espejo de `apps/web/src/data/types.ts`.
 - `src/lib/` — capa base: `http.ts` (cliente HTTP con manejo de token y 401),
   `dates.ts`, `mappers.ts`, `documentFormats.ts`, `theme.ts`.
 - `src/services/` — un servicio por dominio: `auth`, `expedientes`, `chat`,
