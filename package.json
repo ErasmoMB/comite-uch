@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
-    "turbo": "^2.10.4"
+    "turbo": "^2.10.4",
+    "react": "19.1.0"
   }
 }
