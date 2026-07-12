@@ -15,6 +15,12 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    // baseUrl/paths: pin react/react-dom type resolution to this app's own
+    // local React 18 (not the root's react@19.1.0, anchored there only for
+    // apps/mobile's dedup). Without this, react-router (hoisted to the repo
+    // root due to a loose peer range) resolves React 19 types while this
+    // app's own files resolve React 18, causing TS2786 JSX errors. See
+    // commit 37aae53.
     "baseUrl": ".",
     "paths": {
       "react": ["./node_modules/@types/react"],

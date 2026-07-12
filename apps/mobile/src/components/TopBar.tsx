@@ -11,7 +11,7 @@ export default function TopBar({ titulo, atras = true, right }: { titulo: string
   return (
     <View style={[s.bar, { paddingTop: insets.top + 14 }]}>
       {atras && (
-        <Pressable onPress={() => router.back()} hitSlop={10} style={s.back}>
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} hitSlop={10} style={s.back}>
           <Text style={s.backText}>‹</Text>
         </Pressable>
       )}
