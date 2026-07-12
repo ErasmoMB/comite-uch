@@ -1,11 +1,12 @@
 // app/login.tsx
 import { useState } from 'react'
-import { Link, useRouter } from 'expo-router'
+import { Link, useRouter, type Href } from 'expo-router'
 import { StyleSheet, Text, View } from 'react-native'
 import { Button, ErrorText, Field, Input, Logo } from '../src/components/ui'
 import { colors } from '../src/lib/theme'
 import { ApiError } from '../src/lib/http'
 import { useApp } from '../src/state/AppContext'
+import { homeGroupForRole } from '../src/lib/roles'
 
 export default function Login() {
   const { login } = useApp()
@@ -23,8 +24,10 @@ export default function Login() {
     setError('')
     setEnviando(true)
     try {
-      await login(correo.trim(), clave)
-      router.replace('/(app)')
+      const u = await login(correo.trim(), clave)
+      // Cast: expo-router typed-routes solo conoce rutas existentes en app/.
+      // '/(secretaria)' recién existe físicamente desde Fase 4 Task 2.
+      router.replace(homeGroupForRole(u.rol) as Href)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo iniciar sesión. Intenta de nuevo.')
     } finally {
