@@ -1,5 +1,5 @@
 // src/services/evaluacion.service.ts
-import { request } from '../lib/http'
+import { apiUrl, request } from '../lib/http'
 import type { EvaluacionDto, RubricaDto } from '../types/api'
 
 // GET /evaluacion — un evaluador solo ve las suyas; coordinador/admin ven
@@ -86,4 +86,49 @@ export function getById(id: number): Promise<EvaluacionDetalleDto> {
 // La forma real coincide 1:1 con el RubricaDto compartido, se reutiliza.
 export function getRubrica(): Promise<RubricaDto> {
   return request<RubricaDto>('/evaluacion/rubrica')
+}
+
+// POST /evaluacion/:id/guardar-parcial — SOLO persiste `observaciones`
+// (limitación real del backend; NO guarda puntajes parciales). Devuelve
+// {message}, NO un objeto de evaluación -> el consumidor NO debe pisar su
+// estado local con esta respuesta.
+export function guardarAvance(id: number, observaciones: string): Promise<{ message: string }> {
+  return request<{ message: string }>(`/evaluacion/${id}/guardar-parcial`, {
+    method: 'POST',
+    body: { observaciones },
+  })
+}
+
+export interface CriterioInput {
+  key: string
+  puntaje: number
+  observacion?: string
+}
+
+export interface EnviarEvaluacionPayload {
+  observaciones: string
+  completa: true
+  criterios: CriterioInput[]
+}
+
+// PUT /evaluacion/:id — envío definitivo (completa: true). SÍ devuelve el
+// objeto completo real (toResponse) -> se puede usar para refrescar estado.
+export function enviarEvaluacion(id: number, payload: EnviarEvaluacionPayload): Promise<EvaluacionDetalleDto> {
+  return request<EvaluacionDetalleDto>(`/evaluacion/${id}`, { method: 'PUT', body: payload })
+}
+
+// POST /evaluacion/:id/conflicto — irreversible. Devuelve {message}, NO un
+// objeto de evaluación -> el consumidor solo marca conflictoInteres localmente.
+export function declararConflicto(id: number): Promise<{ message: string }> {
+  return request<{ message: string }>(`/evaluacion/${id}/conflicto`, { method: 'POST' })
+}
+
+// URLs de descarga de PDFs (rúbrica/dictamen). Se pasan a abrirDocumento()
+// (documentDownload.ts), que agrega el Bearer, sigue la redirección 302 a la
+// URL firmada si aplica, y abre el share sheet nativo.
+export function urlDescargarRubrica(id: number): string {
+  return apiUrl(`/evaluacion/${id}/descargar-rubrica`)
+}
+export function urlDescargarDictamen(id: number): string {
+  return apiUrl(`/evaluacion/${id}/descargar-dictamen`)
 }
