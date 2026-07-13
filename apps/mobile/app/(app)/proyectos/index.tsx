@@ -5,6 +5,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Card, ErrorText, Field, Input, Loading, Screen, StatusBadge } from '../../../src/components/ui'
 import Avatar from '../../../src/components/Avatar'
+import DateField, { parseFechaISO } from '../../../src/components/DateField'
 import { colors } from '../../../src/lib/theme'
 import type { Proyecto } from '../../../src/data/types'
 import { ApiError } from '../../../src/lib/http'
@@ -117,12 +118,12 @@ export default function Proyectos() {
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
           <View style={{ flex: 1 }}>
             <Field label="Desde">
-              <Input placeholder="AAAA-MM-DD" value={fechaDesde} onChangeText={setFechaDesde} autoCapitalize="none" />
+              <DateField value={fechaDesde} onChange={setFechaDesde} maximumDate={parseFechaISO(fechaHasta) ?? undefined} />
             </Field>
           </View>
           <View style={{ flex: 1 }}>
             <Field label="Hasta">
-              <Input placeholder="AAAA-MM-DD" value={fechaHasta} onChangeText={setFechaHasta} autoCapitalize="none" />
+              <DateField value={fechaHasta} onChange={setFechaHasta} minimumDate={parseFechaISO(fechaDesde) ?? undefined} />
             </Field>
           </View>
           <Pressable onPress={limpiar} style={s.clearBtn}>

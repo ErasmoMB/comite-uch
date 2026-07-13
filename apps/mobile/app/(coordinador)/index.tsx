@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Badge, Card, ErrorText, Input, Loading, Screen, StatusBadge } from '../../src/components/ui'
 import Avatar from '../../src/components/Avatar'
+import DateField, { parseFechaISO } from '../../src/components/DateField'
 import { colors } from '../../src/lib/theme'
 import { formatearFecha } from '../../src/lib/dates'
 import { ApiError } from '../../src/lib/http'
@@ -113,8 +114,8 @@ export default function DashboardCoordinador() {
           autoCapitalize="none"
         />
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Input style={{ flex: 1 }} placeholder="Desde AAAA-MM-DD" value={fechaDesde} onChangeText={setFechaDesde} autoCapitalize="none" />
-          <Input style={{ flex: 1 }} placeholder="Hasta AAAA-MM-DD" value={fechaHasta} onChangeText={setFechaHasta} autoCapitalize="none" />
+          <DateField style={{ flex: 1 }} placeholder="Desde" value={fechaDesde} onChange={setFechaDesde} maximumDate={parseFechaISO(fechaHasta) ?? undefined} />
+          <DateField style={{ flex: 1 }} placeholder="Hasta" value={fechaHasta} onChange={setFechaHasta} minimumDate={parseFechaISO(fechaDesde) ?? undefined} />
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={s.contador}>

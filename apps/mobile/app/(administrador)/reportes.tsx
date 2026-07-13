@@ -103,29 +103,29 @@ export default function ReportesAdmin() {
           <>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 9 }}>
               {metricas.map(m => (
-                <Card key={m.label} style={{ flexBasis: '47%', flexGrow: 1, alignItems: 'center', paddingVertical: 12 }}>
+                <Card key={m.label} style={[s.cardSombra, { flexBasis: '47%', flexGrow: 1, alignItems: 'center', paddingVertical: 12 }]}>
                   <Text style={{ fontSize: 22, fontWeight: '700', color: m.color }}>{m.n}</Text>
                   <Text style={{ fontSize: 11.5, color: colors.slate500, textAlign: 'center' }}>{m.label}</Text>
                 </Card>
               ))}
             </View>
 
-            <Card style={{ gap: 12 }}>
+            <Card style={[s.cardSombra, { gap: 12 }]}>
               <Text style={s.tituloGrafico}>Expedientes por estado</Text>
               <HBarChart data={datosPorEstado} />
             </Card>
 
-            <Card style={{ gap: 12 }}>
+            <Card style={[s.cardSombra, { gap: 12 }]}>
               <Text style={s.tituloGrafico}>Carga por evaluador</Text>
               <HBarChart data={datosCarga} />
             </Card>
 
-            <Card style={{ gap: 12 }}>
+            <Card style={[s.cardSombra, { gap: 12 }]}>
               <Text style={s.tituloGrafico}>Resultados emitidos</Text>
               <StackedHBarChart data={datosResultados} />
             </Card>
 
-            <Card style={{ gap: 10 }}>
+            <Card style={[s.cardSombra, { gap: 10 }]}>
               <Text style={s.tituloGrafico}>Exportar</Text>
               <Button
                 title={exportando === 'expedientes' ? 'Descargando…' : 'Expedientes (PDF)'}
@@ -159,4 +159,7 @@ const s = StyleSheet.create({
   headerKicker: { fontSize: 12.5, color: colors.slate500 },
   headerTitle: { fontSize: 17, fontWeight: '700', color: colors.ink },
   tituloGrafico: { fontSize: 13, fontWeight: '700', color: colors.navy },
+  cardSombra: {
+    shadowColor: colors.navy, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+  },
 })

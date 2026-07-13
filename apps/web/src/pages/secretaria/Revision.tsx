@@ -40,6 +40,7 @@ export default function Revision() {
         if (cancelado) return
         setDetalle(data)
         setError('')
+        setObservaciones('')
       } catch (err) {
         if (cancelado) return
         setError(err instanceof ApiError ? err.message : 'No se pudo cargar el expediente.')

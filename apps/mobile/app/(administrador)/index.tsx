@@ -1,9 +1,10 @@
 // app/(administrador)/index.tsx
 import { useCallback, useMemo, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Badge, Button, Card, ErrorText, Field, Input, Loading, Screen } from '../../src/components/ui'
+import Avatar from '../../src/components/Avatar'
 import { colors } from '../../src/lib/theme'
 import { ApiError } from '../../src/lib/http'
 import { filtrarUsuarios, type FiltroEstadoUsuario } from '../../src/lib/usuariosFilter'
@@ -270,7 +271,7 @@ export default function UsuariosAdmin() {
 
         <Input placeholder="Buscar por nombre o correo…" value={busqueda} onChangeText={setBusqueda} autoCapitalize="none" />
 
-        <View style={s.segment}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.segmentScroll}>
           <Pressable onPress={() => setFiltroRol('todos')} style={[s.segItem, filtroRol === 'todos' && s.segItemActive]}>
             <Text style={[s.segText, filtroRol === 'todos' && s.segTextActive]}>Todos</Text>
           </Pressable>
@@ -279,7 +280,7 @@ export default function UsuariosAdmin() {
               <Text style={[s.segText, filtroRol === r && s.segTextActive]}>{ROL_LABEL[r]}</Text>
             </Pressable>
           ))}
-        </View>
+        </ScrollView>
         <View style={s.segment}>
           {ESTADOS.map(e => (
             <Pressable key={e.key} onPress={() => setFiltroEstado(e.key)} style={[s.segItem, filtroEstado === e.key && s.segItemActive]}>
@@ -302,10 +303,13 @@ export default function UsuariosAdmin() {
             const inactivo = u.activo === false
             const editando = editandoId === u.id
             return (
-              <Card key={u.id} style={{ gap: 8 }}>
-                <View>
-                  <Text numberOfLines={1} style={s.nombre}>{u.nombre} {u.apellido}</Text>
-                  <Text style={s.email}>{u.email}</Text>
+              <Card key={u.id} style={s.cardUsuario}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Avatar nombres={u.nombre} apellidos={u.apellido} size={38} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text numberOfLines={1} style={s.nombre}>{u.nombre} {u.apellido}</Text>
+                    <Text numberOfLines={1} style={s.email}>{u.email}</Text>
+                  </View>
                 </View>
 
                 {editando ? (
@@ -332,11 +336,17 @@ export default function UsuariosAdmin() {
                       <Badge label={ROL_LABEL[u.rol]} bg={colors.blue50} fg={colors.primary} />
                       <Badge label={inactivo ? 'Inactivo' : 'Activo'} bg={inactivo ? colors.chipBg : colors.successBg} fg={inactivo ? colors.slate500 : colors.success} />
                     </View>
-                    <View style={{ flexDirection: 'row', gap: 18, flexWrap: 'wrap', marginTop: 2 }}>
-                      <Pressable disabled={esYo} onPress={() => iniciarEdicion(u)}><Text style={[s.accion, esYo && s.accionOff]}>Editar</Text></Pressable>
-                      <Pressable disabled={esYo} onPress={() => desactivar(u)}><Text style={[s.accionDanger, esYo && s.accionOff]}>Desactivar</Text></Pressable>
+                    <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 2 }}>
+                      <Pressable disabled={esYo} onPress={() => iniciarEdicion(u)} style={[s.accionBtn, esYo && s.accionBtnOff]}>
+                        <Text style={s.accionBtnText}>Editar</Text>
+                      </Pressable>
+                      <Pressable disabled={esYo} onPress={() => desactivar(u)} style={[s.accionBtn, s.accionBtnDanger, esYo && s.accionBtnOff]}>
+                        <Text style={s.accionBtnDangerText}>Desactivar</Text>
+                      </Pressable>
                       {ROLES_INTERNOS.includes(u.rol) && (
-                        <Pressable disabled={esYo} onPress={() => eliminarPermanente(u)}><Text style={[s.accionDanger, esYo && s.accionOff]}>Eliminar</Text></Pressable>
+                        <Pressable disabled={esYo} onPress={() => eliminarPermanente(u)} style={[s.accionBtn, s.accionBtnDanger, esYo && s.accionBtnOff]}>
+                          <Text style={s.accionBtnDangerText}>Eliminar</Text>
+                        </Pressable>
                       )}
                     </View>
                   </>
@@ -361,17 +371,24 @@ const s = StyleSheet.create({
   nuevoBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   formTitulo: { fontSize: 14, fontWeight: '700', color: colors.navy },
   segment: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  segmentScroll: { flexDirection: 'row', gap: 8, paddingRight: 4 },
   segItem: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: colors.line, backgroundColor: '#fff' },
   segItemActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   segText: { fontSize: 12.5, color: colors.slate500, fontWeight: '600' },
   segTextActive: { color: '#fff' },
   contador: { fontSize: 13, fontWeight: '700', color: colors.navy },
   limpiar: { fontSize: 13, fontWeight: '600', color: colors.primary },
-  nombre: { fontSize: 14, fontWeight: '700', color: colors.ink },
+  cardUsuario: {
+    gap: 10,
+    shadowColor: colors.navy, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+  },
+  nombre: { fontSize: 14.5, fontWeight: '700', color: colors.ink },
   email: { fontSize: 12, color: colors.slate400, marginTop: 1 },
-  accion: { fontSize: 13, fontWeight: '600', color: colors.primary },
-  accionDanger: { fontSize: 13, fontWeight: '600', color: colors.danger },
-  accionOff: { color: colors.slate400 },
+  accionBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: colors.line, backgroundColor: '#fff' },
+  accionBtnText: { fontSize: 12.5, fontWeight: '600', color: colors.primary },
+  accionBtnDanger: { borderColor: colors.dangerBg, backgroundColor: colors.dangerBg },
+  accionBtnDangerText: { fontSize: 12.5, fontWeight: '600', color: colors.danger },
+  accionBtnOff: { opacity: 0.4 },
   check: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   checkBox: { width: 20, height: 20, borderRadius: 5, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
   checkBoxOn: { backgroundColor: colors.primary, borderColor: colors.primary },

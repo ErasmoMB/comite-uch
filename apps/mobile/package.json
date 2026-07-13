@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@comite/shared": "*",
+    "@react-native-community/datetimepicker": "8.4.4",
     "expo": "^54.0.0",
     "expo-constants": "~18.0.13",
     "expo-file-system": "~19.0.23",

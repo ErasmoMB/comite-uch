@@ -2,14 +2,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Button, Card, ErrorText, Field, Input, Loading, Screen } from '../../src/components/ui'
+import { Button, Card, ErrorText, Field, Loading, Screen } from '../../src/components/ui'
+import DateField from '../../src/components/DateField'
 import { colors } from '../../src/lib/theme'
 import { formatearFecha } from '../../src/lib/dates'
 import { ApiError } from '../../src/lib/http'
 import { configService } from '../../src/services'
 import { useConfirm } from '../../src/state/ConfirmContext'
-
-const FORMATO_FECHA = /^\d{4}-\d{2}-\d{2}$/
 
 function aValorInput(fecha: string | null): string {
   return fecha ? fecha.slice(0, 10) : ''
@@ -55,8 +54,8 @@ export default function ConfiguracionAdmin() {
 
   async function guardar() {
     const v = valor.trim()
-    if (!FORMATO_FECHA.test(v)) {
-      setError('Ingresa una fecha válida con el formato AAAA-MM-DD.')
+    if (!v) {
+      setError('Selecciona una fecha límite.')
       return
     }
     setError('')
@@ -101,21 +100,14 @@ export default function ConfiguracionAdmin() {
       <Screen>
         {cargando && <Loading label="Cargando configuración…" />}
         {!cargando && (
-          <Card style={{ gap: 14 }}>
+          <Card style={s.cardSombra}>
             <Text style={s.titulo}>Fecha límite de envío de protocolos</Text>
             <Text style={s.actual}>
               {fechaLimite ? `Fecha límite actual: ${formatearFecha(fechaLimite)}` : 'No hay una fecha límite configurada.'}
             </Text>
 
             <Field label="Nueva fecha límite">
-              <Input
-                placeholder="AAAA-MM-DD"
-                value={valor}
-                onChangeText={setValor}
-                autoCapitalize="none"
-                autoCorrect={false}
-                maxLength={10}
-              />
+              <DateField value={valor} onChange={setValor} minimumDate={new Date()} />
             </Field>
 
             {!!error && <ErrorText>{error}</ErrorText>}
@@ -143,4 +135,8 @@ const s = StyleSheet.create({
   titulo: { fontSize: 14, fontWeight: '700', color: colors.navy },
   actual: { fontSize: 13, color: colors.slate500 },
   ok: { fontSize: 13, fontWeight: '600', color: colors.success },
+  cardSombra: {
+    gap: 14,
+    shadowColor: colors.navy, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+  },
 })
