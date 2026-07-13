@@ -1,6 +1,6 @@
 // src/components/screens/PerfilScreen.tsx
-import { useEffect, useState } from 'react'
-import { useRouter } from 'expo-router'
+import { useCallback, useState } from 'react'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button, Card, Screen } from '../ui'
@@ -25,10 +25,10 @@ export default function PerfilScreen() {
 
   const esSolicitante = usuario ? ROLES_SOLICITANTE.includes(usuario.rol) : false
 
-  useEffect(() => {
-    if (!usuario) return
+  const cargar = useCallback(() => {
+    if (!usuario) return undefined
     let cancelado = false
-    async function cargar() {
+    ;(async () => {
       try {
         const proyectos = await expedientesService.list()
         if (cancelado) return
@@ -49,10 +49,16 @@ export default function PerfilScreen() {
       } catch {
         if (!cancelado) setStats([])
       }
-    }
-    cargar()
+    })()
     return () => { cancelado = true }
   }, [usuario, esSolicitante])
+
+  useFocusEffect(
+    useCallback(() => {
+      const cancelar = cargar()
+      return cancelar
+    }, [cargar])
+  )
 
   const filas = [
     { label: 'Correo institucional', valor: usuario?.correo ?? '—' },

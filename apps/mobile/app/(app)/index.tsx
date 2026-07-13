@@ -1,6 +1,6 @@
 // app/(app)/index.tsx
-import { useEffect, useState } from 'react'
-import { useRouter } from 'expo-router'
+import { useCallback, useEffect, useState } from 'react'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Card, Loading, ErrorText, StatusBadge, Screen } from '../../src/components/ui'
@@ -32,7 +32,7 @@ export default function Dashboard() {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
     let activo = true
     ;(async () => {
       setCargando(true); setError('')
@@ -46,6 +46,13 @@ export default function Dashboard() {
     })()
     return () => { activo = false }
   }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      const cancelar = cargar()
+      return cancelar
+    }, [cargar])
+  )
 
   const stats = [
     { n: proyectos.filter(p => p.estado === 'enviado' || p.estado === 'en_revision').length, label: 'Revisión', color: colors.primary },

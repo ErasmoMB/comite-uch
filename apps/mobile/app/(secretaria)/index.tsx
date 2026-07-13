@@ -1,6 +1,6 @@
 // app/(secretaria)/index.tsx
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'expo-router'
+import { useCallback, useMemo, useState } from 'react'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Card, ErrorText, Input, Loading, Screen, StatusBadge } from '../../src/components/ui'
@@ -24,7 +24,7 @@ export default function Bandeja() {
   const [fechaDesde, setFechaDesde] = useState('')
   const [fechaHasta, setFechaHasta] = useState('')
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
     let activo = true
     ;(async () => {
       setCargando(true)
@@ -40,6 +40,13 @@ export default function Bandeja() {
     })()
     return () => { activo = false }
   }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      const cancelar = cargar()
+      return cancelar
+    }, [cargar])
+  )
 
   const pendientes = useMemo(
     () => filtrarBandeja(expedientes, { busqueda, fechaDesde, fechaHasta }),
