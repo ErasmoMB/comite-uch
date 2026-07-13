@@ -57,6 +57,11 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:8002
   3 pestañas): `index` (Bandeja de expedientes), `chat/` (lista `index` y hilo
   `[solicitanteId]`), `perfil`, más la ruta oculta `revision/[id]`. La redirección
   post-login elige el grupo según el rol (`src/lib/roles.ts` → `homeGroupForRole`).
+- `app/(coordinador)/` — grupo del rol Coordinador (guard de sesión + Tabs de
+  2 pestañas): `index` (Panel de coordinación / Dashboard) y `perfil`, más la ruta
+  oculta `asignacion/[id]` (Asignar evaluador, se llega solo tocando un expediente
+  del Dashboard). La redirección post-login elige el grupo según el rol
+  (`src/lib/roles.ts` → `homeGroupForRole`).
 - `src/components/` — UI base (`ui.tsx`), `Avatar`, `TopBar`, `DocumentoCard`.
 - `src/data/` — tipos de dominio (`EstadoProyecto`, `Proyecto`, `Autor`,
   `Observacion`, etc.), espejo de `apps/web/src/data/types.ts`.
@@ -81,6 +86,12 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:8002
   expediente (autores, documentos con apertura nativa vía `expo-file-system` +
   `expo-sharing`, bitácora/historial, Admitir/Devolver), Chat (lista + hilo) y Perfil
   con la rama de rol interno. Navegación por rol vía grupos de rutas separados.
+- Rol **Coordinador**: Dashboard (4 stats + lista de expedientes en revisión con
+  búsqueda/filtro de fecha y badge de asignación), Asignación de evaluador (picker
+  ordenado por menor carga pendiente, regla de 1 evaluador por expediente, manejo
+  del 400 de carrera) y Perfil con la rama de rol interno. Servicio nuevo
+  `evaluacion.service.ts` (`list` + `asignarEvaluador` con respuesta correctamente
+  tipada). El Dashboard usa `useFocusEffect` para refrescarse al volver de Asignación.
 
 **Fuera de alcance (deliberado):**
 - Subida real de archivos con cámara/galería (`expo-image-picker`). La interfaz de
@@ -99,3 +110,13 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:8002
   del Solicitante en `(app)` y el anti-loop de navegación por rol. Debe ejecutarlo
   alguien con acceso a un dispositivo/emulador antes de dar por cerrada la
   verificación E2E de Fase 4.
+- El **recorrido manual del checklist E2E del rol Coordinador en Android real**
+  (Fase 5, Task 6 Step 3 del plan de build) también queda pendiente por el mismo
+  motivo: login directo al grupo `(coordinador)` con sus 2 pestañas, Dashboard
+  (stats/lista/badge de asignación/búsqueda y filtro de fecha), Asignación de
+  evaluador (picker por menor carga, confirmación, refresco vía `useFocusEffect`
+  sin recargar la app, tarjeta de solo lectura si ya está asignado, manejo del 400
+  de carrera), Perfil, y las regresiones críticas de Fase 3 (Solicitante) y Fase 4
+  (Secretaría) más el caso de rol aún no implementado (`evaluador@uch.edu.pe` /
+  `admin@uch.edu.pe`). Debe ejecutarlo alguien con acceso a un dispositivo/emulador
+  antes de dar por cerrada la verificación E2E de Fase 5.
