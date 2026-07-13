@@ -1,4 +1,10 @@
-const BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8002').replace(/\/$/, '')
+// Sin VITE_API_URL explícito: en dev (`vite dev`) apunta al backend local en
+// 8002 (flujo de dos servidores separados); en un build de producción
+// (`vite build`) asume mismo origen que la API (deploy de un solo web
+// service, ej. Render) — así no depende de poder fijar esa env var ahí.
+const BASE_URL = (
+  import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'http://localhost:8002' : '')
+).replace(/\/$/, '')
 
 const TOKEN_KEY = 'ce_auth_token'
 
