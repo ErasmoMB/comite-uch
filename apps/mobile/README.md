@@ -1,8 +1,10 @@
 # @comite/mobile
 
-App Expo (React Native) del portal del solicitante — Comité de Ética UCH. Consume la
-misma API (`apps/api`, NestJS + Supabase) que `apps/web`, replicando sus flujos para
-un cliente móvil Android.
+App Expo (React Native) del Comité de Ética UCH. Consume la misma API (`apps/api`,
+NestJS + Supabase) que `apps/web`, replicando sus flujos para un cliente móvil
+Android. Cubre los 7 roles del sistema mediante 5 grupos de rutas separados por
+rol: `(app)` (solicitante), `(secretaria)`, `(coordinador)`, `(evaluador)` y
+`(administrador)`.
 
 ## Requisitos
 
@@ -67,13 +69,28 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:8002
   `evaluacion/[id]` (rúbrica de 7 criterios + 3 acciones + descarga de PDFs, se
   llega solo tocando una fila de la Bandeja). La redirección post-login elige el
   grupo según el rol (`src/lib/roles.ts` → `homeGroupForRole`).
-- `src/components/` — UI base (`ui.tsx`), `Avatar`, `TopBar`, `DocumentoCard`.
+- `app/(administrador)/` — grupo del rol Administrador (guard de sesión + Tabs
+  de 4 pestañas): `usuarios` (lista con búsqueda/filtro de rol y estado, crear,
+  editar rol/estado, desactivar, eliminar permanente para roles internos —
+  auto-desactivación/auto-eliminación sobre la propia cuenta deshabilitadas),
+  `configuracion` (fecha límite AAAA-MM-DD: ver/guardar/quitar), `reportes`
+  (4 tarjetas KPI + gráficos nativos "Expedientes por estado", "Carga por
+  evaluador" y "Resultados emitidos" apilado + 3 exportaciones a PDF vía share
+  sheet nativo) y `perfil` (rama de rol interno existente, sin cambios). La
+  redirección post-login elige el grupo según el rol (`src/lib/roles.ts` →
+  `homeGroupForRole`). **Con este grupo, los 7 roles del sistema quedan
+  cubiertos por los 5 grupos de rutas de `apps/mobile`; ningún rol cae en
+  `/rol-no-disponible`.**
+- `src/components/` — UI base (`ui.tsx`), `Avatar`, `TopBar`, `DocumentoCard`,
+  `HBarChart`/`StackedHBarChart` (gráficos nativos con `<View>`, sin
+  dependencias de charting).
 - `src/data/` — tipos de dominio (`EstadoProyecto`, `Proyecto`, `Autor`,
   `Observacion`, etc.), espejo de `apps/web/src/data/types.ts`.
 - `src/lib/` — capa base: `http.ts` (cliente HTTP con manejo de token y 401),
   `dates.ts`, `mappers.ts`, `documentFormats.ts`, `theme.ts`.
 - `src/services/` — un servicio por dominio: `auth`, `expedientes`, `chat`,
-  `notificaciones`, `users`, `config` (mismos endpoints que `apps/web`).
+  `notificaciones`, `users`, `config`, `reportes` (`GET /reportes/resumen` +
+  las 3 exportaciones PDF) (mismos endpoints que `apps/web`).
 - `src/state/` — `AppContext` (sesión/hidratación) y `ConfirmContext`.
 - `src/types/` — DTOs re-exportados desde `@comite/shared`.
 
@@ -110,6 +127,24 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:8002
   Se amplió `evaluacion.service.ts` con `misEvaluaciones`/`getById`/`getRubrica`/
   `guardarAvance`/`enviarEvaluacion`/`declararConflicto`, tipados contra la forma
   real de la API (`EvaluacionDetalleDto`, NO el `EvaluacionDto` compartido).
+- Rol **Administrador**: Usuarios (lista con contador "N de M", búsqueda,
+  filtro de rol por píldoras dinámicas y de estado Todos/Activos/Inactivos,
+  `useFocusEffect` para refrescarse tras crear/editar; crear con validaciones
+  —password ≥8, especialidad requerida si rol = evaluador—; editar rol/estado;
+  desactivar y eliminar permanente —solo roles internos, con confirmación y
+  manejo del error del backend si la cuenta tiene evaluaciones/mensajes—;
+  auto-desactivación/auto-eliminación sobre la propia cuenta deshabilitadas),
+  Configuración (fecha límite AAAA-MM-DD: ver, guardar con validación de
+  formato, quitar con confirmación), Reportes (4 tarjetas KPI, gráficos
+  nativos de barras horizontales y barra apilada con leyenda, 3 exportaciones
+  a PDF —expedientes, evaluaciones, reporte con gráficos— vía
+  `abrirDocumento`/share sheet nativo) y Perfil con la rama de rol interno
+  existente (sin cambios). Servicio nuevo `reportes.service.ts`
+  (`GET /reportes/resumen` tipado con `ResumenReporte`, forma idéntica a
+  `apps/web`). No se agregó ninguna dependencia de charting: los gráficos son
+  `<View>` nativos. **Con este rol, los 7 roles del sistema quedan cubiertos
+  por los 5 grupos de rutas de `apps/mobile`; ningún rol cae en
+  `/rol-no-disponible`.**
 
 **Fuera de alcance (deliberado):**
 - Subida real de archivos con cámara/galería (`expo-image-picker`). La interfaz de
@@ -152,3 +187,18 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:8002
   Perfil, y las regresiones de Fases 3/4/5 más el caso del `administrador` (único
   rol ya no implementado). Debe ejecutarlo alguien con acceso a un
   dispositivo/emulador antes de dar por cerrada la verificación E2E de Fase 6.
+- El **recorrido manual del checklist E2E del rol Administrador en Android real**
+  (Fase 7, Task 8 Step 3 de este plan) queda pendiente por el mismo motivo:
+  login directo al grupo `(administrador)` con sus 4 pestañas, Usuarios
+  (lista/contador/búsqueda/filtros de rol y estado, crear con validaciones,
+  editar rol/estado, desactivar, eliminar permanente solo en roles internos,
+  auto-desactivación/auto-eliminación deshabilitadas sobre la propia cuenta),
+  Configuración (ver/guardar/quitar fecha límite), Reportes (KPIs, gráficos
+  nativos, 3 exportaciones a PDF vía share sheet), Perfil, y — al ser la
+  última fase del proyecto móvil — la **regresión completa de navegación de
+  los 5 grupos**: Solicitante → `(app)`, Secretaría → `(secretaria)`,
+  Coordinador → `(coordinador)`, Evaluador → `(evaluador)`, Administrador →
+  `(administrador)`, verificando que ningún rol cae en `/rol-no-disponible`
+  y que no hay loops de redirección entre grupos. Debe ejecutarlo alguien con
+  acceso a un dispositivo/emulador antes de dar por cerrada la verificación
+  E2E de Fase 7 y del proyecto móvil completo (los 7 roles del sistema).
