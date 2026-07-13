@@ -152,6 +152,10 @@ export default function UsuariosAdmin() {
   }
 
   async function guardarEdicion(id: number) {
+    if (id === usuario?.id) {
+      setAccionError('No puedes cambiar el rol o el estado de tu propia cuenta.')
+      return
+    }
     setGuardandoEdicion(true)
     setAccionError('')
     try {
@@ -329,7 +333,7 @@ export default function UsuariosAdmin() {
                       <Badge label={inactivo ? 'Inactivo' : 'Activo'} bg={inactivo ? colors.chipBg : colors.successBg} fg={inactivo ? colors.slate500 : colors.success} />
                     </View>
                     <View style={{ flexDirection: 'row', gap: 18, flexWrap: 'wrap', marginTop: 2 }}>
-                      <Pressable onPress={() => iniciarEdicion(u)}><Text style={s.accion}>Editar</Text></Pressable>
+                      <Pressable disabled={esYo} onPress={() => iniciarEdicion(u)}><Text style={[s.accion, esYo && s.accionOff]}>Editar</Text></Pressable>
                       <Pressable disabled={esYo} onPress={() => desactivar(u)}><Text style={[s.accionDanger, esYo && s.accionOff]}>Desactivar</Text></Pressable>
                       {ROLES_INTERNOS.includes(u.rol) && (
                         <Pressable disabled={esYo} onPress={() => eliminarPermanente(u)}><Text style={[s.accionDanger, esYo && s.accionOff]}>Eliminar</Text></Pressable>
