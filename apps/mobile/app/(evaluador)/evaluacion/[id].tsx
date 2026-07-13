@@ -254,6 +254,11 @@ export default function Evaluacion() {
   // casos (la web lo muestra erróneamente también en no_aprobado, porque
   // solo chequea `evaluacion.resultado` truthy).
   const hayDictamen = evaluacion.resultado === 'aprobado' || evaluacion.resultado === 'aprobado_observaciones'
+  // FIX (mirror de la decisión anterior): la rúbrica en PDF SOLO se genera
+  // en el backend para aprobado_observaciones / no_aprobado (ver
+  // generarPdfsPostEnvio en evaluacion.service.ts) -> para 'aprobado' no
+  // existe rubricaPdfPath y el botón llevaba a un 404 confuso.
+  const hayRubrica = evaluacion.resultado === 'aprobado_observaciones' || evaluacion.resultado === 'no_aprobado'
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -366,12 +371,14 @@ export default function Evaluacion() {
         {/* Acciones según el estado de la evaluación */}
         {soloLectura ? (
           <View style={{ gap: 10 }}>
-            <Button
-              title={descargando === 'rubrica' ? 'Abriendo…' : 'Descargar rúbrica (PDF)'}
-              variant="outline"
-              loading={descargando === 'rubrica'}
-              onPress={() => onDescargarPdf('rubrica')}
-            />
+            {hayRubrica && (
+              <Button
+                title={descargando === 'rubrica' ? 'Abriendo…' : 'Descargar rúbrica (PDF)'}
+                variant="outline"
+                loading={descargando === 'rubrica'}
+                onPress={() => onDescargarPdf('rubrica')}
+              />
+            )}
             {hayDictamen && (
               <Button
                 title={descargando === 'dictamen' ? 'Abriendo…' : 'Descargar dictamen (PDF)'}
