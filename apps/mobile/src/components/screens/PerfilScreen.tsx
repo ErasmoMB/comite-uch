@@ -7,7 +7,7 @@ import { Button, Card, Screen } from '../ui'
 import Avatar from '../Avatar'
 import { colors } from '../../lib/theme'
 import { ROL_LABEL, ROLES_SOLICITANTE } from '../../data/types'
-import { expedientesService } from '../../services'
+import { evaluacionService, expedientesService } from '../../services'
 import { useApp } from '../../state/AppContext'
 
 interface Stat {
@@ -24,34 +24,48 @@ export default function PerfilScreen() {
   const [totalRegistros, setTotalRegistros] = useState<number | null>(null)
 
   const esSolicitante = usuario ? ROLES_SOLICITANTE.includes(usuario.rol) : false
+  const esEvaluador = usuario?.rol === 'evaluador'
 
   const cargar = useCallback(() => {
     if (!usuario) return undefined
     let cancelado = false
     ;(async () => {
       try {
-        const proyectos = await expedientesService.list()
-        if (cancelado) return
-        setTotalRegistros(proyectos.length)
-        if (esSolicitante) {
+        if (esEvaluador) {
+          // Stats del evaluador desde SUS evaluaciones (NO desde expedientes):
+          // Pendientes (!completa) / Completadas (completa). Igual que la rama
+          // `rol === 'evaluador'` de la web (Perfil.tsx).
+          const evaluaciones = await evaluacionService.misEvaluaciones()
+          if (cancelado) return
+          setTotalRegistros(evaluaciones.length)
           setStats([
-            { n: proyectos.filter(p => p.estado === 'en_revision' || p.estado === 'enviado').length, label: 'En revisión', color: colors.primary },
-            { n: proyectos.filter(p => p.estado === 'aprobado' || p.estado === 'aprobado_observaciones').length, label: 'Aprobados', color: colors.success },
-            { n: proyectos.filter(p => p.estado === 'subsanacion').length, label: 'Subsanación', color: colors.warn },
+            { n: evaluaciones.filter(e => !e.completa).length, label: 'Pendientes', color: colors.primary },
+            { n: evaluaciones.filter(e => e.completa).length, label: 'Completadas', color: colors.success },
           ])
         } else {
-          // Rama de rol interno (secretaría), calcada de la rama else de la web.
-          setStats([
-            { n: proyectos.filter(p => p.estado === 'enviado' || p.estado === 'en_revision').length, label: 'Enviados', color: colors.primary },
-            { n: proyectos.filter(p => p.estado === 'aprobado' || p.estado === 'aprobado_observaciones').length, label: 'Aprobados', color: colors.success },
-          ])
+          const proyectos = await expedientesService.list()
+          if (cancelado) return
+          setTotalRegistros(proyectos.length)
+          if (esSolicitante) {
+            setStats([
+              { n: proyectos.filter(p => p.estado === 'en_revision' || p.estado === 'enviado').length, label: 'En revisión', color: colors.primary },
+              { n: proyectos.filter(p => p.estado === 'aprobado' || p.estado === 'aprobado_observaciones').length, label: 'Aprobados', color: colors.success },
+              { n: proyectos.filter(p => p.estado === 'subsanacion').length, label: 'Subsanación', color: colors.warn },
+            ])
+          } else {
+            // Rama de rol interno (secretaría/coordinador), calcada de la web.
+            setStats([
+              { n: proyectos.filter(p => p.estado === 'enviado' || p.estado === 'en_revision').length, label: 'Enviados', color: colors.primary },
+              { n: proyectos.filter(p => p.estado === 'aprobado' || p.estado === 'aprobado_observaciones').length, label: 'Aprobados', color: colors.success },
+            ])
+          }
         }
       } catch {
         if (!cancelado) setStats([])
       }
     })()
     return () => { cancelado = true }
-  }, [usuario, esSolicitante])
+  }, [usuario, esSolicitante, esEvaluador])
 
   useFocusEffect(
     useCallback(() => {
@@ -65,7 +79,9 @@ export default function PerfilScreen() {
     ...(usuario?.codigo ? [{ label: 'Código de estudiante', valor: usuario.codigo }] : []),
     ...(usuario?.laboratorio ? [{ label: 'Laboratorio', valor: usuario.laboratorio }] : []),
     ...(usuario?.especialidad ? [{ label: 'Especialidad', valor: usuario.especialidad }] : []),
-    ...(totalRegistros !== null ? [{ label: esSolicitante ? 'Proyectos registrados' : 'Expedientes vinculados', valor: String(totalRegistros) }] : []),
+    ...(totalRegistros !== null
+      ? [{ label: esSolicitante ? 'Proyectos registrados' : esEvaluador ? 'Evaluaciones asignadas' : 'Expedientes vinculados', valor: String(totalRegistros) }]
+      : []),
   ]
 
   async function cerrarSesion() {
