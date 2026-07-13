@@ -62,6 +62,11 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:8002
   oculta `asignacion/[id]` (Asignar evaluador, se llega solo tocando un expediente
   del Dashboard). La redirección post-login elige el grupo según el rol
   (`src/lib/roles.ts` → `homeGroupForRole`).
+- `app/(evaluador)/` — grupo del rol Evaluador (guard de sesión + Tabs de
+  2 pestañas): `index` (Bandeja de evaluaciones) y `perfil`, más la ruta oculta
+  `evaluacion/[id]` (rúbrica de 7 criterios + 3 acciones + descarga de PDFs, se
+  llega solo tocando una fila de la Bandeja). La redirección post-login elige el
+  grupo según el rol (`src/lib/roles.ts` → `homeGroupForRole`).
 - `src/components/` — UI base (`ui.tsx`), `Avatar`, `TopBar`, `DocumentoCard`.
 - `src/data/` — tipos de dominio (`EstadoProyecto`, `Proyecto`, `Autor`,
   `Observacion`, etc.), espejo de `apps/web/src/data/types.ts`.
@@ -92,6 +97,19 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:8002
   del 400 de carrera) y Perfil con la rama de rol interno. Servicio nuevo
   `evaluacion.service.ts` (`list` + `asignarEvaluador` con respuesta correctamente
   tipada). El Dashboard usa `useFocusEffect` para refrescarse al volver de Asignación.
+- Rol **Evaluador**: Bandeja de evaluaciones (lista de las evaluaciones
+  asignadas con búsqueda/filtro de fecha reutilizando `expedienteListFilter`,
+  N+1 `getById` por fila, badges Completada/Pendiente/Conflicto, `useFocusEffect`),
+  Evaluación (rúbrica de 7 criterios con selector de puntaje tipo píldora +
+  observación por criterio, preview en vivo de puntaje/resultado, documentos con
+  apertura nativa vía `documentDownload.ts`, y 3 acciones: Guardar avance —solo
+  observaciones—, Enviar evaluación con validación/confirmación, Declarar
+  conflicto; modo solo-lectura con descarga de rúbrica/dictamen —el dictamen
+  solo cuando el resultado es aprobado/aprobado con observaciones—) y Perfil con
+  su propia rama (stats Pendientes/Completadas desde `misEvaluaciones()`).
+  Se amplió `evaluacion.service.ts` con `misEvaluaciones`/`getById`/`getRubrica`/
+  `guardarAvance`/`enviarEvaluacion`/`declararConflicto`, tipados contra la forma
+  real de la API (`EvaluacionDetalleDto`, NO el `EvaluacionDto` compartido).
 
 **Fuera de alcance (deliberado):**
 - Subida real de archivos con cámara/galería (`expo-image-picker`). La interfaz de
@@ -120,3 +138,17 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:8002
   (Secretaría) más el caso de rol aún no implementado (`evaluador@uch.edu.pe` /
   `admin@uch.edu.pe`). Debe ejecutarlo alguien con acceso a un dispositivo/emulador
   antes de dar por cerrada la verificación E2E de Fase 5.
+
+  > Nota (Fase 6): a partir de esta fase el rol Evaluador ya está implementado, así
+  > que `evaluador@uch.edu.pe` entra a su propio grupo `(evaluador)` en vez de caer
+  > en "rol no disponible". Desde Fase 6 en adelante, **solo `admin@uch.edu.pe`**
+  > cae en el caso de "rol aún no implementado" al recorrer este checklist.
+- El **recorrido manual del checklist E2E del rol Evaluador en Android real**
+  (Fase 6, Task 8 Step 3 de este plan) queda pendiente por el mismo motivo:
+  login directo al grupo `(evaluador)` con sus 2 pestañas, Bandeja
+  (lista/búsqueda/filtro de fecha/badges), Evaluación (rúbrica con selector de
+  píldoras, preview en vivo, apertura de documentos y PDFs vía share sheet,
+  Guardar/Enviar/Conflicto, modo solo-lectura y fix del botón de dictamen),
+  Perfil, y las regresiones de Fases 3/4/5 más el caso del `administrador` (único
+  rol ya no implementado). Debe ejecutarlo alguien con acceso a un
+  dispositivo/emulador antes de dar por cerrada la verificación E2E de Fase 6.
