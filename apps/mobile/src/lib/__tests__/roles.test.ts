@@ -13,8 +13,10 @@ describe('homeGroupForRole', () => {
   it('manda coordinador a su propio grupo /(coordinador)', () => {
     expect(homeGroupForRole('coordinador')).toBe('/(coordinador)')
   })
-  it('roles internos aún no implementados van a la pantalla de rol no disponible, NO a /(app)', () => {
-    expect(homeGroupForRole('evaluador')).toBe('/rol-no-disponible')
+  it('manda evaluador a su propio grupo /(evaluador)', () => {
+    expect(homeGroupForRole('evaluador')).toBe('/(evaluador)')
+  })
+  it('el administrador (aún no implementado) va a la pantalla de rol no disponible, NO a /(app)', () => {
     expect(homeGroupForRole('administrador')).toBe('/rol-no-disponible')
   })
 })
