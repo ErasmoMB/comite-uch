@@ -11,6 +11,7 @@ export type HomeGroup =
   | '/(secretaria)'
   | '/(coordinador)'
   | '/(evaluador)'
+  | '/(administrador)'
   | '/rol-no-disponible'
 
 export function homeGroupForRole(rol: RolBackend): HomeGroup {
@@ -18,8 +19,11 @@ export function homeGroupForRole(rol: RolBackend): HomeGroup {
   if (rol === 'secretaria') return '/(secretaria)'
   if (rol === 'coordinador') return '/(coordinador)'
   if (rol === 'evaluador') return '/(evaluador)'
-  // Rol interno aún no implementado (administrador): NO se manda a '/(app)'
-  // (vería el Dashboard/wizard del solicitante con datos de todo el sistema,
-  // confuso y engañoso). Se ampliará en la fase futura del Administrador.
+  if (rol === 'administrador') return '/(administrador)'
+  // Tras la Fase 7 los 7 roles del sistema tienen su grupo propio, así que
+  // NINGÚN rol conocido llega ya hasta acá. Se conserva la rama como fallback
+  // defensivo por si el backend introdujera un rol futuro/desconocido: en ese
+  // caso se manda a /rol-no-disponible en vez de a '/(app)' (que mostraría el
+  // wizard del solicitante con datos ajenos, confuso y engañoso).
   return '/rol-no-disponible'
 }

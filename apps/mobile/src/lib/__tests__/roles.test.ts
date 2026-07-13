@@ -10,13 +10,13 @@ describe('homeGroupForRole', () => {
   it('manda secretaría a /(secretaria)', () => {
     expect(homeGroupForRole('secretaria')).toBe('/(secretaria)')
   })
-  it('manda coordinador a su propio grupo /(coordinador)', () => {
+  it('manda coordinador a /(coordinador)', () => {
     expect(homeGroupForRole('coordinador')).toBe('/(coordinador)')
   })
-  it('manda evaluador a su propio grupo /(evaluador)', () => {
+  it('manda evaluador a /(evaluador)', () => {
     expect(homeGroupForRole('evaluador')).toBe('/(evaluador)')
   })
-  it('el administrador (aún no implementado) va a la pantalla de rol no disponible, NO a /(app)', () => {
-    expect(homeGroupForRole('administrador')).toBe('/rol-no-disponible')
+  it('manda administrador a su propio grupo /(administrador) (ya no al fallback)', () => {
+    expect(homeGroupForRole('administrador')).toBe('/(administrador)')
   })
 })
