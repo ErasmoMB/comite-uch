@@ -1,4 +1,4 @@
-// app/(evaluador)/evaluacion/[id].tsx  (parte 1 — acciones/bloqueo/PDF en Task 7)
+// app/(evaluador)/evaluacion/[id].tsx
 import { useEffect, useMemo, useState } from 'react'
 import { useLocalSearchParams } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
@@ -10,6 +10,7 @@ import { ApiError, apiUrl } from '../../../src/lib/http'
 import { abrirDocumento } from '../../../src/lib/documentDownload'
 import { puntajeAcumulado, resultadoPrevisto, type ResultadoRubrica } from '../../../src/lib/rubricaResultado'
 import { evaluacionService, expedientesService } from '../../../src/services'
+import { useConfirm } from '../../../src/state/ConfirmContext'
 import type { DocumentoDto, ExpedienteDto, RubricaDto } from '../../../src/types/api'
 import type { EvaluacionDetalleDto } from '../../../src/services/evaluacion.service'
 
@@ -32,6 +33,7 @@ const RESULTADO_COLOR: Record<ResultadoRubrica, string> = {
 export default function Evaluacion() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const evaluacionId = Number(id)
+  const confirmar = useConfirm()
 
   const [evaluacion, setEvaluacion] = useState<EvaluacionDetalleDto | null>(null)
   const [rubrica, setRubrica] = useState<RubricaDto | null>(null)
@@ -44,7 +46,12 @@ export default function Evaluacion() {
   const [observacionesGenerales, setObservacionesGenerales] = useState('')
 
   const [error, setError] = useState('')
+  const [mensaje, setMensaje] = useState('')
+  const [guardando, setGuardando] = useState(false)
+  const [enviando, setEnviando] = useState(false)
+  const [declarando, setDeclarando] = useState(false)
   const [abriendo, setAbriendo] = useState<number | null>(null)
+  const [descargando, setDescargando] = useState<'rubrica' | 'dictamen' | null>(null)
 
   useEffect(() => {
     if (!Number.isFinite(evaluacionId)) {
@@ -115,6 +122,86 @@ export default function Evaluacion() {
     setCriteriosEstado(prev => ({ ...prev, [key]: { ...prev[key], [campo]: valor } }))
   }
 
+  function validarParaEnviar(): string | null {
+    if (!rubrica) return 'La rúbrica aún no se ha cargado.'
+    for (const c of rubrica.criterios) {
+      const valor = criteriosEstado[c.key]?.puntaje ?? ''
+      if (valor.trim() === '') return `Falta asignar el puntaje de "${c.nombre}".`
+      const n = Number(valor)
+      if (Number.isNaN(n) || n < 0 || n > c.puntajeMax) return `El puntaje de "${c.nombre}" debe estar entre 0 y ${c.puntajeMax}.`
+    }
+    return null
+  }
+
+  async function onGuardarAvance() {
+    if (!evaluacion) return
+    setGuardando(true); setError(''); setMensaje('')
+    try {
+      // guardar-parcial SOLO persiste observaciones (limitación real del
+      // backend; los puntajes viven en estado local hasta Enviar). La
+      // respuesta {message} NO pisa el estado local (el bug de la web que sí
+      // lo pisa NO se replica aquí).
+      const res = await evaluacionService.guardarAvance(evaluacion.id, observacionesGenerales)
+      setMensaje(res.message || 'Avance guardado correctamente.')
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'No se pudo guardar el avance.')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  async function onEnviar() {
+    if (!evaluacion || !rubrica) return
+    const problema = validarParaEnviar()
+    if (problema) { setError(problema); setMensaje(''); return }
+    if (!(await confirmar('Esta acción no se puede deshacer.', {
+      titulo: 'Enviar evaluación de forma definitiva',
+      textoConfirmar: 'Enviar evaluación',
+    }))) return
+    setEnviando(true); setError(''); setMensaje('')
+    try {
+      const actualizado = await evaluacionService.enviarEvaluacion(evaluacion.id, {
+        observaciones: observacionesGenerales,
+        completa: true,
+        criterios: rubrica.criterios.map(c => ({
+          key: c.key,
+          puntaje: Number(criteriosEstado[c.key].puntaje),
+          observacion: criteriosEstado[c.key].observacion.trim() || undefined,
+        })),
+      })
+      // enviarEvaluacion SÍ devuelve el objeto completo (toResponse): se usa
+      // para refrescar el estado y pasar a modo solo-lectura.
+      setEvaluacion(actualizado)
+      setMensaje('Evaluación enviada correctamente.')
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'No se pudo enviar la evaluación.')
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  async function onDeclararConflicto() {
+    if (!evaluacion) return
+    if (!(await confirmar('Esta acción es irreversible y te retirará del proceso de evaluación.', {
+      titulo: 'Declarar conflicto de interés',
+      textoConfirmar: 'Declarar conflicto',
+      peligroso: true,
+    }))) return
+    setDeclarando(true); setError(''); setMensaje('')
+    try {
+      // declararConflicto devuelve {message}; NO pisa el estado local (bug de
+      // la web NO replicado). Se refleja el bloqueo marcando conflicto sobre
+      // el estado ya cargado, sin sustituir el objeto por uno incompleto.
+      const res = await evaluacionService.declararConflicto(evaluacion.id)
+      setEvaluacion(prev => (prev ? { ...prev, conflictoInteres: true } : prev))
+      setMensaje(res.message || 'Has declarado conflicto de interés. Ya no puedes continuar con esta evaluación.')
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'No se pudo declarar el conflicto de interés.')
+    } finally {
+      setDeclarando(false)
+    }
+  }
+
   async function onAbrirDocumento(doc: DocumentoDto) {
     if (!expediente) return
     try {
@@ -125,6 +212,21 @@ export default function Evaluacion() {
       setError(e instanceof ApiError ? e.message : (e instanceof Error ? e.message : 'No se pudo abrir el documento.'))
     } finally {
       setAbriendo(null)
+    }
+  }
+
+  async function onDescargarPdf(tipo: 'rubrica' | 'dictamen') {
+    if (!evaluacion) return
+    try {
+      setDescargando(tipo); setError('')
+      const url = tipo === 'rubrica'
+        ? evaluacionService.urlDescargarRubrica(evaluacion.id)
+        : evaluacionService.urlDescargarDictamen(evaluacion.id)
+      await abrirDocumento(url, `${tipo}-evaluacion-${evaluacion.id}.pdf`)
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : (e instanceof Error ? e.message : `No se pudo descargar ${tipo === 'rubrica' ? 'la rúbrica' : 'el dictamen'}.`))
+    } finally {
+      setDescargando(null)
     }
   }
 
@@ -147,6 +249,11 @@ export default function Evaluacion() {
   }
 
   const pct = Math.min(100, Math.round((total / rubrica.puntajeTotalMax) * 100))
+  // FIX (spec, decisión 3): el dictamen SOLO existe para aprobado /
+  // aprobado_observaciones -> el botón de descarga solo se muestra en esos
+  // casos (la web lo muestra erróneamente también en no_aprobado, porque
+  // solo chequea `evaluacion.resultado` truthy).
+  const hayDictamen = evaluacion.resultado === 'aprobado' || evaluacion.resultado === 'aprobado_observaciones'
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -254,7 +361,34 @@ export default function Evaluacion() {
         </Field>
 
         {!!error && <ErrorText>{error}</ErrorText>}
-        {/* Acciones (Guardar/Enviar/Conflicto), estados de bloqueo y botones de PDF: Task 7. */}
+        {!!mensaje && !error && <Text style={s.exito}>{mensaje}</Text>}
+
+        {/* Acciones según el estado de la evaluación */}
+        {soloLectura ? (
+          <View style={{ gap: 10 }}>
+            <Button
+              title={descargando === 'rubrica' ? 'Abriendo…' : 'Descargar rúbrica (PDF)'}
+              variant="outline"
+              loading={descargando === 'rubrica'}
+              onPress={() => onDescargarPdf('rubrica')}
+            />
+            {hayDictamen && (
+              <Button
+                title={descargando === 'dictamen' ? 'Abriendo…' : 'Descargar dictamen (PDF)'}
+                loading={descargando === 'dictamen'}
+                onPress={() => onDescargarPdf('dictamen')}
+              />
+            )}
+          </View>
+        ) : conflicto ? (
+          <Text style={s.muted}>Declaraste conflicto de interés en esta evaluación; ya no puedes editarla.</Text>
+        ) : (
+          <View style={{ gap: 10 }}>
+            <Button title={guardando ? 'Guardando…' : 'Guardar avance'} variant="outline" loading={guardando} onPress={onGuardarAvance} />
+            <Button title={enviando ? 'Enviando…' : 'Enviar evaluación'} loading={enviando} onPress={onEnviar} />
+            <Button title={declarando ? 'Declarando…' : 'Declarar conflicto de interés'} variant="danger" loading={declarando} onPress={onDeclararConflicto} />
+          </View>
+        )}
       </Screen>
     </View>
   )
