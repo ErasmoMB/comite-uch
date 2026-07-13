@@ -10,8 +10,10 @@ describe('homeGroupForRole', () => {
   it('manda secretaría a /(secretaria)', () => {
     expect(homeGroupForRole('secretaria')).toBe('/(secretaria)')
   })
+  it('manda coordinador a su propio grupo /(coordinador)', () => {
+    expect(homeGroupForRole('coordinador')).toBe('/(coordinador)')
+  })
   it('roles internos aún no implementados van a la pantalla de rol no disponible, NO a /(app)', () => {
-    expect(homeGroupForRole('coordinador')).toBe('/rol-no-disponible')
     expect(homeGroupForRole('evaluador')).toBe('/rol-no-disponible')
     expect(homeGroupForRole('administrador')).toBe('/rol-no-disponible')
   })
