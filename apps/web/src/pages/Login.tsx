@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Logo } from '../components/shared'
 import { homePathForRole } from '../data/types'
 import { ApiError } from '../lib/http'
+import { APP_NOMBRE, MOSTRAR_LOGO } from '../lib/marca'
 import { useApp } from '../state/AppContext'
 
 export default function Login() {
@@ -47,10 +48,9 @@ export default function Login() {
           >
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 24 }}>
               <Logo />
-              <strong style={{ fontSize: 19, color: 'var(--navy)' }}>Comité de Ética</strong>
-              <span style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--slate-500)', letterSpacing: 1.2 }}>
-                UNIV. DE CIENCIAS Y HUMANIDADES
-              </span>
+              <strong style={{ fontSize: 16, lineHeight: 1.35, color: 'var(--navy)', textAlign: 'center' }}>
+                {APP_NOMBRE}
+              </strong>
             </div>
 
             <div className="field" style={{ marginBottom: 14 }}>
@@ -105,7 +105,7 @@ export default function Login() {
           </form>
         </div>
         <p style={{ textAlign: 'center', padding: '0 16px 20px', fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,.7)', margin: 0 }}>
-          Sistema del Comité de Ética · UCH
+          {APP_NOMBRE}
         </p>
       </div>
 
@@ -114,18 +114,18 @@ export default function Login() {
           <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(45deg, rgba(255,255,255,.04) 0 24px, transparent 24px 48px)' }} />
           <div style={{ position: 'relative' }}>
             <Logo size={54} />
-            <div style={{ fontSize: 30, fontWeight: 700, lineHeight: 1.25, margin: '22px 0 14px' }}>
-              Sistema del Comité
-              <br />
-              de Ética
+            <div style={{ fontSize: 26, fontWeight: 700, lineHeight: 1.3, margin: '22px 0 14px', maxWidth: 420 }}>
+              {APP_NOMBRE}
             </div>
             <div style={{ fontSize: 14, lineHeight: 1.7, opacity: 0.85, maxWidth: 380 }}>
               Gestiona la evaluación ética de tus proyectos de investigación de principio a fin: envío, subsanación y
               dictamen, todo en un solo lugar.
             </div>
-            <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.6, letterSpacing: 1.2, marginTop: 40 }}>
-              UNIVERSIDAD DE CIENCIAS Y HUMANIDADES
-            </div>
+            {MOSTRAR_LOGO && (
+              <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.6, letterSpacing: 1.2, marginTop: 40 }}>
+                UNIVERSIDAD DE CIENCIAS Y HUMANIDADES
+              </div>
+            )}
           </div>
         </div>
         <div className="d-auth-form-panel">

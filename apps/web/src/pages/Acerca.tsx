@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Logo } from '../components/shared'
+import { MOSTRAR_LOGO } from '../lib/marca'
 
 const PILARES = [
   { titulo: 'Evaluar', detalle: 'Revisión ética de proyectos.' },
@@ -49,7 +50,9 @@ export default function Acerca() {
         >
           ‹
         </button>
-        <img src="/uch.png" alt="UCH" style={{ width: 44, height: 44, borderRadius: 12, objectFit: 'cover', marginBottom: 14 }} />
+        {MOSTRAR_LOGO && (
+          <img src="/uch.png" alt="UCH" style={{ width: 44, height: 44, borderRadius: 12, objectFit: 'cover', marginBottom: 14 }} />
+        )}
         <h1 style={{ fontSize: 22, lineHeight: 1.25, margin: '0 0 8px' }}>Comité de Ética en Investigación</h1>
         <p style={{ fontSize: 13.5, lineHeight: 1.55, opacity: 0.85, margin: 0 }}>
           Evaluamos y acompañamos los proyectos de investigación de la comunidad UCH bajo principios éticos.

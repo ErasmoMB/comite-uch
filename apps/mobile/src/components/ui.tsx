@@ -5,6 +5,7 @@ import {
   type StyleProp, type TextInputProps, type ViewStyle,
 } from 'react-native'
 import { colors, badgeColors } from '../lib/theme'
+import { MOSTRAR_LOGO } from '../lib/marca'
 import { ESTADO_LABEL } from '../lib/mappers'
 import type { EstadoProyecto } from '../data/types'
 
@@ -95,6 +96,7 @@ export function SectionTitle({ children }: { children: ReactNode }) {
 
 export function Logo({ size = 52 }: { size?: number }) {
   // Sin asset remoto: cuadrado navy con iniciales UCH (placeholder consistente).
+  if (!MOSTRAR_LOGO) return null
   return (
     <View style={{ width: size, height: size, borderRadius: size * 0.27, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center' }}>
       <Text style={{ color: '#fff', fontWeight: '700', fontSize: size * 0.32 }}>UCH</Text>

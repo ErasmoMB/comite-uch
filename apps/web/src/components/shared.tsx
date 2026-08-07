@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import type { EstadoProyecto } from '../data/types'
 import { ESTADO_LABEL } from '../lib/mappers'
+import { MOSTRAR_LOGO } from '../lib/marca'
 import type { ReactNode } from 'react'
 
 export function Logo({ size = 52 }: { size?: number }) {
+  if (!MOSTRAR_LOGO) return null
   return (
     <img
       src="/uch.png"

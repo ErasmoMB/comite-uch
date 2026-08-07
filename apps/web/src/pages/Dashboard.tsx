@@ -9,18 +9,41 @@ import type { Proyecto } from '../data/types'
 import { formatearFecha } from '../lib/dates'
 import { ApiError } from '../lib/http'
 import { toDomainProyecto } from '../lib/mappers'
-import { expedientesService } from '../services'
+import { configService, expedientesService } from '../services'
 import { useApp } from '../state/AppContext'
 
-// Fecha de cierre de la convocatoria vigente (demo)
-const CIERRE = new Date('2026-07-08T23:59:59')
-
+// Cuenta regresiva hasta la fecha límite de envío que configura el
+// administrador (`fecha_limite_envio`, ver admin/Configuracion). Devuelve null
+// mientras se carga o si no hay fecha configurada, para que el banner no se
+// muestre en cero.
 function useCuentaRegresiva() {
-  const [restante, setRestante] = useState(CIERRE.getTime() - Date.now())
+  const [cierre, setCierre] = useState<number | null>(null)
+  const [restante, setRestante] = useState(0)
+
   useEffect(() => {
-    const t = setInterval(() => setRestante(CIERRE.getTime() - Date.now()), 1000)
-    return () => clearInterval(t)
+    let vivo = true
+    configService
+      .getFechaLimite()
+      .then(dto => {
+        if (vivo && dto.fechaLimite) setCierre(new Date(dto.fechaLimite).getTime())
+      })
+      .catch(() => {
+        /* sin fecha límite configurada: el banner simplemente no se muestra */
+      })
+    return () => {
+      vivo = false
+    }
   }, [])
+
+  useEffect(() => {
+    if (cierre === null) return
+    const actualizar = () => setRestante(cierre - Date.now())
+    actualizar()
+    const t = setInterval(actualizar, 1000)
+    return () => clearInterval(t)
+  }, [cierre])
+
+  if (cierre === null) return null
   const s = Math.max(0, Math.floor(restante / 1000))
   return {
     dias: Math.floor(s / 86400),
@@ -123,31 +146,33 @@ export default function Dashboard() {
       </header>
 
       <div className="screen-body" style={{ padding: '15px 16px 12px', gap: 14 }}>
-        <section
-          style={{
-            background: 'linear-gradient(135deg, #08204A, #0b57b7)',
-            borderRadius: 18,
-            padding: '15px 17px',
-            color: '#fff',
-          }}
-        >
-          <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.85, marginBottom: 10 }}>
-            Cierre de envíos de proyectos
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {[
-              [cr.dias, 'DÍAS'],
-              [cr.horas, 'HRS'],
-              [cr.min, 'MIN'],
-              [cr.seg, 'SEG'],
-            ].map(([n, l]) => (
-              <div key={l} style={{ flex: 1, background: 'rgba(255,255,255,.15)', borderRadius: 10, padding: '9px 0', textAlign: 'center' }}>
-                <div style={{ fontSize: 22, fontWeight: 700 }}>{String(n).padStart(2, '0')}</div>
-                <div style={{ fontSize: 9, fontWeight: 600, opacity: 0.8, letterSpacing: 0.8 }}>{l}</div>
-              </div>
-            ))}
-          </div>
-        </section>
+        {cr && (
+          <section
+            style={{
+              background: 'linear-gradient(135deg, #08204A, #0b57b7)',
+              borderRadius: 18,
+              padding: '15px 17px',
+              color: '#fff',
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.85, marginBottom: 10 }}>
+              Cierre de envíos de proyectos
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[
+                [cr.dias, 'DÍAS'],
+                [cr.horas, 'HRS'],
+                [cr.min, 'MIN'],
+                [cr.seg, 'SEG'],
+              ].map(([n, l]) => (
+                <div key={l} style={{ flex: 1, background: 'rgba(255,255,255,.15)', borderRadius: 10, padding: '9px 0', textAlign: 'center' }}>
+                  <div style={{ fontSize: 22, fontWeight: 700 }}>{String(n).padStart(2, '0')}</div>
+                  <div style={{ fontSize: 9, fontWeight: 600, opacity: 0.8, letterSpacing: 0.8 }}>{l}</div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section style={{ display: 'flex', gap: 9 }}>
           {stats.map(s => (
@@ -206,41 +231,46 @@ export default function Dashboard() {
           <DesktopTopbar search bell withUserInfo searchPlaceholder="Buscar proyecto, código…" />
           <div className="d-content">
             <div style={{ display: 'flex', gap: 20 }}>
-              <section
-                style={{
-                  flex: 2,
-                  background: 'linear-gradient(135deg, #08204A, #0b57b7)',
-                  borderRadius: 16,
-                  padding: '22px 26px',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: 12.5, fontWeight: 600, opacity: 0.85, marginBottom: 6 }}>
-                    Cierre del periodo de envíos de proyectos
-                  </div>
-                  <div style={{ fontSize: 20, fontWeight: 700 }}>
-                    Quedan {cr.dias} días, {cr.horas} horas
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  {[
-                    [cr.dias, 'DÍAS'],
-                    [cr.horas, 'HRS'],
-                    [cr.min, 'MIN'],
-                  ].map(([n, l]) => (
-                    <div key={l} style={{ background: 'rgba(255,255,255,.15)', borderRadius: 10, padding: '10px 16px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 22, fontWeight: 700 }}>{String(n).padStart(2, '0')}</div>
-                      <div style={{ fontSize: 9, fontWeight: 600, opacity: 0.8, letterSpacing: 0.8 }}>{l}</div>
+              {cr && (
+                <section
+                  style={{
+                    flex: 2,
+                    background: 'linear-gradient(135deg, #08204A, #0b57b7)',
+                    borderRadius: 16,
+                    padding: '22px 26px',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, opacity: 0.85, marginBottom: 6 }}>
+                      Cierre del periodo de envíos de proyectos
                     </div>
-                  ))}
-                </div>
-              </section>
+                    <div style={{ fontSize: 20, fontWeight: 700 }}>
+                      Quedan {cr.dias} días, {cr.horas} horas
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    {[
+                      [cr.dias, 'DÍAS'],
+                      [cr.horas, 'HRS'],
+                      [cr.min, 'MIN'],
+                      [cr.seg, 'SEG'],
+                    ].map(([n, l]) => (
+                      <div key={l} style={{ background: 'rgba(255,255,255,.15)', borderRadius: 10, padding: '10px 16px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 22, fontWeight: 700 }}>{String(n).padStart(2, '0')}</div>
+                        <div style={{ fontSize: 9, fontWeight: 600, opacity: 0.8, letterSpacing: 0.8 }}>{l}</div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+              {/* Las 4 tarjetas, igual que en la app móvil: antes se cortaba
+                  con slice(0,3) y el conteo de borradores no se veía en web. */}
               <div style={{ flex: 1, display: 'flex', gap: 10 }}>
-                {stats.slice(0, 3).map(s => (
+                {stats.map(s => (
                   <div key={s.label} className="card" style={{ flex: 1, padding: '14px 8px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <div style={{ fontSize: 24, fontWeight: 700, color: s.color }}>{s.n}</div>
                     <div style={{ fontSize: 10.5, fontWeight: 500, color: 'var(--slate-500)' }}>{s.label}</div>

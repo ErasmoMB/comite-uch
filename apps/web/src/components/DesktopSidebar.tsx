@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { navItemsForRole } from './navConfig'
+import { APP_NOMBRE, APP_SUBTITULO, MOSTRAR_LOGO } from '../lib/marca'
 import { useApp } from '../state/AppContext'
 
 function Icon({ d }: { d: string }) {
@@ -25,10 +26,10 @@ export default function DesktopSidebar() {
   return (
     <nav className="d-sidebar">
       <div className="d-sb-logo">
-        <img src="/uch.png" alt="UCH" className="d-sb-mark" />
+        {MOSTRAR_LOGO && <img src="/uch.png" alt="UCH" className="d-sb-mark" />}
         <div>
-          <div className="d-sb-title">Comité de Ética</div>
-          <div className="d-sb-sub">UCH</div>
+          <div className="d-sb-title">{APP_NOMBRE}</div>
+          <div className="d-sb-sub">{APP_SUBTITULO}</div>
         </div>
       </div>
 

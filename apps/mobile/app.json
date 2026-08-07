@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Comité de Ética UCH",
+    "name": "Comité de Ética",
     "slug": "comite-etica-uch",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -11,13 +11,13 @@
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#08204a"
+      "backgroundColor": "#21366d"
     },
     "android": {
       "package": "pe.edu.uch.comite",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#08204a"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#21366d"
       }
     },
     "plugins": [

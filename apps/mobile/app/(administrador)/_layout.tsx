@@ -1,15 +1,11 @@
 // app/(administrador)/_layout.tsx
 import { Redirect, Tabs } from 'expo-router'
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
+import TabIcon from '../../src/components/TabIcon'
 import { useApp } from '../../src/state/AppContext'
 import { Loading } from '../../src/components/ui'
 import { colors } from '../../src/lib/theme'
 import { homeGroupForRole } from '../../src/lib/roles'
-
-// Icono textual simple (mismo criterio que los otros layouts de grupo).
-function TabIcon({ label, color }: { label: string; color: string }) {
-  return <Text style={{ color, fontSize: 18 }}>{label}</Text>
-}
 
 export default function AdministradorLayout() {
   const { usuario, cargandoSesion } = useApp()
@@ -23,10 +19,10 @@ export default function AdministradorLayout() {
 
   return (
     <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: colors.slate400 }}>
-      <Tabs.Screen name="index" options={{ title: 'Usuarios', tabBarIcon: ({ color }) => <TabIcon label="◪" color={color} /> }} />
-      <Tabs.Screen name="configuracion" options={{ title: 'Config', tabBarIcon: ({ color }) => <TabIcon label="⚙" color={color} /> }} />
-      <Tabs.Screen name="reportes" options={{ title: 'Reportes', tabBarIcon: ({ color }) => <TabIcon label="▤" color={color} /> }} />
-      <Tabs.Screen name="perfil" options={{ title: 'Perfil', tabBarIcon: ({ color }) => <TabIcon label="◔" color={color} /> }} />
+      <Tabs.Screen name="index" options={{ title: 'Usuarios', tabBarIcon: ({ color }) => <TabIcon name="usuarios" color={color} /> }} />
+      <Tabs.Screen name="configuracion" options={{ title: 'Config', tabBarIcon: ({ color }) => <TabIcon name="configuracion" color={color} /> }} />
+      <Tabs.Screen name="reportes" options={{ title: 'Reportes', tabBarIcon: ({ color }) => <TabIcon name="reportes" color={color} /> }} />
+      <Tabs.Screen name="perfil" options={{ title: 'Perfil', tabBarIcon: ({ color }) => <TabIcon name="perfil" color={color} /> }} />
     </Tabs>
   )
 }

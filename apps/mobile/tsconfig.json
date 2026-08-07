@@ -4,7 +4,14 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      // `@expo/vector-icons` viene incluido dentro del paquete `expo` (uso
+      // documentado por Expo), pero npm lo dejó anidado en
+      // node_modules/expo/node_modules en vez de hoistearlo. Metro lo resuelve
+      // bien en tiempo de ejecución; este remapeo es solo para que tsc también
+      // encuentre sus tipos, sin tocar la instalación del monorepo.
+      "@expo/vector-icons/*": ["../../node_modules/expo/node_modules/@expo/vector-icons/*"],
+      "@expo/vector-icons": ["../../node_modules/expo/node_modules/@expo/vector-icons"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]

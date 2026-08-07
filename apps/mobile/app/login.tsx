@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native'
 import { Button, ErrorText, Field, Input, Logo } from '../src/components/ui'
 import { colors } from '../src/lib/theme'
 import { ApiError } from '../src/lib/http'
+import { APP_NOMBRE } from '../src/lib/marca'
 import { useApp } from '../src/state/AppContext'
 import { homeGroupForRole } from '../src/lib/roles'
 
@@ -38,7 +39,7 @@ export default function Login() {
       <View style={s.card}>
         <View style={s.header}>
           <Logo />
-          <Text style={s.title}>Comité de Ética</Text>
+          <Text style={s.title}>{APP_NOMBRE}</Text>
           <Text style={s.subtitle}>UNIV. DE CIENCIAS Y HUMANIDADES</Text>
         </View>
         <Field label="Correo institucional">
