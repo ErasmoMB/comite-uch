@@ -81,9 +81,9 @@ export default function Bandeja() {
             onChangeText={setBusqueda}
             autoCapitalize="none"
           />
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <DateField style={{ flex: 1 }} placeholder="Desde" value={fechaDesde} onChange={setFechaDesde} maximumDate={parseFechaISO(fechaHasta) ?? undefined} />
-            <DateField style={{ flex: 1 }} placeholder="Hasta" value={fechaHasta} onChange={setFechaHasta} minimumDate={parseFechaISO(fechaDesde) ?? undefined} />
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
+            <DateField label="Desde" style={{ flex: 1 }} value={fechaDesde} onChange={setFechaDesde} maximumDate={parseFechaISO(fechaHasta) ?? undefined} />
+            <DateField label="Hasta" style={{ flex: 1 }} value={fechaHasta} onChange={setFechaHasta} minimumDate={parseFechaISO(fechaDesde) ?? undefined} />
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text style={s.contador}>

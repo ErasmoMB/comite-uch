@@ -38,8 +38,8 @@ const PASSWORD = 'password';
 
 // (email, rol, nombre, apellido, extra)
 const DEMO_USERS = [
-  ['pregrado@uch.edu.pe', 'estudiante_pregrado', 'Pamela', 'Pregrado', { codigoEstudiante: 'P0001' }],
-  ['postgrado@uch.edu.pe', 'estudiante_postgrado', 'Pablo', 'Postgrado', { codigoEstudiante: 'P0002' }],
+  ['pregrado@uch.edu.pe', 'estudiante_pregrado', 'Pamela', 'Pregrado', { codigoEstudiante: '25115013' }],
+  ['postgrado@uch.edu.pe', 'estudiante_postgrado', 'Pablo', 'Postgrado', { codigoEstudiante: '23108742' }],
   ['investigador@uch.edu.pe', 'investigador', 'Ivan', 'Investigador', { laboratorio: 'Lab Central' }],
   ['secretaria@uch.edu.pe', 'secretaria', 'Sofia', 'Secretaria', {}],
   ['coordinador@uch.edu.pe', 'coordinador', 'Carlos', 'Coordinador', {}],

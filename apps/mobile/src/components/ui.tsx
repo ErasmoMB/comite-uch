@@ -12,7 +12,16 @@ import type { EstadoProyecto } from '../data/types'
 export function Screen({ children, scroll = true, style }: { children: ReactNode; scroll?: boolean; style?: StyleProp<ViewStyle> }) {
   if (scroll) {
     return (
-      <ScrollView style={s.screen} contentContainerStyle={[s.screenContent, style]} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        style={s.screen}
+        // `s.scrollExtra` reserva espacio al final para que la barra de
+        // pestañas (que flota sobre el contenido) no tape los ultimos
+        // elementos -- en "Nuevo proyecto" cortaba los botones Cancelar/
+        // Siguiente. Va antes de `style` para que una pantalla pueda
+        // sobreescribirlo si lo necesita.
+        contentContainerStyle={[s.screenContent, s.scrollExtra, style]}
+        keyboardShouldPersistTaps="handled"
+      >
         {children}
       </ScrollView>
     )
@@ -130,6 +139,7 @@ const btnVariant: Record<Variant, ViewStyle> = {
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   screenContent: { padding: 16, gap: 12 },
+  scrollExtra: { paddingBottom: 96 },
   card: { backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: colors.lineSoft, padding: 14 },
   field: { gap: 6 },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: colors.slate700 },

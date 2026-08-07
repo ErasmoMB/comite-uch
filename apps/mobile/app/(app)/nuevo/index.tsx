@@ -278,28 +278,25 @@ export default function NuevoProyecto() {
                 editable={!datosBloqueados}
                 onChangeText={v => actualizarAutor(i, 'apellidosNombres', v)}
               />
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                {esEstudiante && (
-                  <View style={{ flex: 1 }}>
-                    <Input
-                      placeholder="Código"
-                      value={a.codigoEstudiante}
-                      editable={!datosBloqueados}
-                      onChangeText={v => actualizarAutor(i, 'codigoEstudiante', v)}
-                    />
-                  </View>
-                )}
-                <View style={{ flex: 1 }}>
-                  <Input
-                    placeholder="Correo"
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    value={a.correo}
-                    editable={!datosBloqueados}
-                    onChangeText={v => actualizarAutor(i, 'correo', v)}
-                  />
-                </View>
-              </View>
+              {/* Código y correo van apilados, no lado a lado: a media pantalla
+                  de teléfono un correo institucional no entra y se veía
+                  cortado por la izquierda ("regrado@uch.edu.pe"). */}
+              {esEstudiante && (
+                <Input
+                  placeholder="Código"
+                  value={a.codigoEstudiante}
+                  editable={!datosBloqueados}
+                  onChangeText={v => actualizarAutor(i, 'codigoEstudiante', v)}
+                />
+              )}
+              <Input
+                placeholder="Correo"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                value={a.correo}
+                editable={!datosBloqueados}
+                onChangeText={v => actualizarAutor(i, 'correo', v)}
+              />
               <Input
                 placeholder="Teléfono"
                 keyboardType="phone-pad"
