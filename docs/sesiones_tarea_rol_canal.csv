@@ -1,0 +1,511 @@
+﻿respondent_id,role,channel,task_id,task_description,completed,time_seconds,errors_count,abandoned,notes
+P001,Secretaria,Web desktop,T1,Revisar y aprobar un expediente enviado,si,174,1,no,
+P001,Secretaria,Web desktop,T2,Responder un mensaje del chat,no,33,1,si,tuvo que pedir ayuda al moderador
+P001,Secretaria,Web desktop,T3,Actualizar el estado de un expediente,si,24,0,no,
+P001,Secretaria,Web desktop,T4,Buscar un expediente usando filtros,si,74,0,no,
+P001,Secretaria,Web desktop,T5,Descargar un documento adjunto,si,47,0,no,completó sin dificultad
+P002,Secretaria,Web desktop,T1,Revisar y aprobar un expediente enviado,si,51,0,no,
+P002,Secretaria,Web desktop,T2,Responder un mensaje del chat,si,53,0,no,
+P002,Secretaria,Web desktop,T3,Actualizar el estado de un expediente,si,103,0,no,
+P002,Secretaria,Web desktop,T4,Buscar un expediente usando filtros,si,23,0,no,
+P002,Secretaria,Web desktop,T5,Descargar un documento adjunto,si,18,0,no,
+P003,Secretaria,Web desktop,T1,Revisar y aprobar un expediente enviado,si,228,0,no,
+P003,Secretaria,Web desktop,T2,Responder un mensaje del chat,si,62,0,no,
+P003,Secretaria,Web desktop,T3,Actualizar el estado de un expediente,si,97,2,no,se perdió en el menú de opciones
+P003,Secretaria,Web desktop,T4,Buscar un expediente usando filtros,si,52,2,no,no identificó el ícono de notificaciones
+P003,Secretaria,Web desktop,T5,Descargar un documento adjunto,si,63,1,no,completó sin dificultad
+P004,Secretaria,Web desktop,T1,Revisar y aprobar un expediente enviado,si,100,0,no,
+P004,Secretaria,Web desktop,T2,Responder un mensaje del chat,si,33,0,no,completó sin dificultad
+P004,Secretaria,Web desktop,T3,Actualizar el estado de un expediente,si,64,0,no,
+P004,Secretaria,Web desktop,T4,Buscar un expediente usando filtros,si,61,0,no,
+P004,Secretaria,Web desktop,T5,Descargar un documento adjunto,si,15,0,no,
+P005,Secretaria,Web desktop,T1,Revisar y aprobar un expediente enviado,si,194,0,no,
+P005,Secretaria,Web desktop,T2,Responder un mensaje del chat,si,57,0,no,
+P005,Secretaria,Web desktop,T3,Actualizar el estado de un expediente,si,88,0,no,
+P005,Secretaria,Web desktop,T4,Buscar un expediente usando filtros,si,70,0,no,
+P005,Secretaria,Web desktop,T5,Descargar un documento adjunto,si,35,1,no,completó sin dificultad
+P006,Secretaria,Expo mobile,T1,Revisar y aprobar un expediente enviado,si,214,0,no,
+P006,Secretaria,Expo mobile,T2,Responder un mensaje del chat,si,71,0,no,
+P006,Secretaria,Expo mobile,T3,Actualizar el estado de un expediente,si,134,1,no,
+P006,Secretaria,Expo mobile,T4,Buscar un expediente usando filtros,no,45,1,si,dudó en el botón de aprobar
+P006,Secretaria,Expo mobile,T5,Descargar un documento adjunto,si,34,1,no,
+P007,Secretaria,Expo mobile,T1,Revisar y aprobar un expediente enviado,si,224,1,no,
+P007,Secretaria,Expo mobile,T2,Responder un mensaje del chat,si,57,1,no,
+P007,Secretaria,Expo mobile,T3,Actualizar el estado de un expediente,si,151,1,no,
+P007,Secretaria,Expo mobile,T4,Buscar un expediente usando filtros,si,97,2,no,reintentó varias veces el mismo paso
+P007,Secretaria,Expo mobile,T5,Descargar un documento adjunto,si,72,2,no,abandonó por confusión con los criterios
+P008,Secretaria,Expo mobile,T1,Revisar y aprobar un expediente enviado,si,229,1,no,
+P008,Secretaria,Expo mobile,T2,Responder un mensaje del chat,si,96,0,no,
+P008,Secretaria,Expo mobile,T3,Actualizar el estado de un expediente,no,79,2,si,no identificó el ícono de notificaciones
+P008,Secretaria,Expo mobile,T4,Buscar un expediente usando filtros,si,46,0,no,completó sin dificultad
+P008,Secretaria,Expo mobile,T5,Descargar un documento adjunto,si,27,3,no,no identificó el ícono de notificaciones
+P009,Secretaria,Expo mobile,T1,Revisar y aprobar un expediente enviado,si,187,4,no,no identificó el ícono de notificaciones
+P009,Secretaria,Expo mobile,T2,Responder un mensaje del chat,no,41,0,si,dudó en el botón de aprobar
+P009,Secretaria,Expo mobile,T3,Actualizar el estado de un expediente,si,113,0,no,
+P009,Secretaria,Expo mobile,T4,Buscar un expediente usando filtros,si,108,1,no,
+P009,Secretaria,Expo mobile,T5,Descargar un documento adjunto,si,35,2,no,dudó en el botón de aprobar
+P010,Secretaria,Expo mobile,T1,Revisar y aprobar un expediente enviado,si,141,2,no,tuvo que pedir ayuda al moderador
+P010,Secretaria,Expo mobile,T2,Responder un mensaje del chat,si,62,0,no,
+P010,Secretaria,Expo mobile,T3,Actualizar el estado de un expediente,si,63,1,no,
+P010,Secretaria,Expo mobile,T4,Buscar un expediente usando filtros,si,91,0,no,
+P010,Secretaria,Expo mobile,T5,Descargar un documento adjunto,si,47,0,no,
+P011,Coordinador,Web desktop,T1,Revisar y aprobar un expediente enviado,si,116,1,no,
+P011,Coordinador,Web desktop,T2,Responder un mensaje del chat,si,29,0,no,
+P011,Coordinador,Web desktop,T3,Actualizar el estado de un expediente,si,70,0,no,
+P011,Coordinador,Web desktop,T4,Buscar un expediente usando filtros,si,84,0,no,
+P012,Coordinador,Web desktop,T1,Revisar y aprobar un expediente enviado,si,181,0,no,
+P012,Coordinador,Web desktop,T2,Responder un mensaje del chat,si,53,1,no,
+P012,Coordinador,Web desktop,T3,Actualizar el estado de un expediente,si,133,1,no,
+P012,Coordinador,Web desktop,T4,Buscar un expediente usando filtros,si,15,0,no,
+P013,Coordinador,Web desktop,T1,Revisar y aprobar un expediente enviado,si,199,4,no,tuvo que pedir ayuda al moderador
+P013,Coordinador,Web desktop,T2,Responder un mensaje del chat,si,95,1,no,
+P013,Coordinador,Web desktop,T3,Actualizar el estado de un expediente,si,87,3,no,dudó en el botón de aprobar
+P013,Coordinador,Web desktop,T4,Buscar un expediente usando filtros,si,107,1,no,
+P014,Coordinador,Web desktop,T1,Revisar y aprobar un expediente enviado,si,170,0,no,
+P014,Coordinador,Web desktop,T2,Responder un mensaje del chat,si,98,0,no,
+P014,Coordinador,Web desktop,T3,Actualizar el estado de un expediente,si,130,0,no,
+P014,Coordinador,Web desktop,T4,Buscar un expediente usando filtros,si,120,1,no,completó sin dificultad
+P015,Coordinador,Expo mobile,T1,Revisar y aprobar un expediente enviado,si,182,0,no,
+P015,Coordinador,Expo mobile,T2,Responder un mensaje del chat,si,85,0,no,
+P015,Coordinador,Expo mobile,T3,Actualizar el estado de un expediente,si,111,1,no,
+P015,Coordinador,Expo mobile,T4,Buscar un expediente usando filtros,si,73,1,no,
+P016,Coordinador,Expo mobile,T1,Revisar y aprobar un expediente enviado,si,165,0,no,
+P016,Coordinador,Expo mobile,T2,Responder un mensaje del chat,si,23,1,no,
+P016,Coordinador,Expo mobile,T3,Actualizar el estado de un expediente,si,88,0,no,
+P016,Coordinador,Expo mobile,T4,Buscar un expediente usando filtros,no,46,2,si,reintentó varias veces el mismo paso
+P017,Coordinador,Expo mobile,T1,Revisar y aprobar un expediente enviado,si,76,0,no,
+P017,Coordinador,Expo mobile,T2,Responder un mensaje del chat,si,20,1,no,
+P017,Coordinador,Expo mobile,T3,Actualizar el estado de un expediente,si,66,1,no,
+P017,Coordinador,Expo mobile,T4,Buscar un expediente usando filtros,si,65,0,no,
+P018,Coordinador,Expo mobile,T1,Revisar y aprobar un expediente enviado,si,111,0,no,
+P018,Coordinador,Expo mobile,T2,Responder un mensaje del chat,si,65,0,no,
+P018,Coordinador,Expo mobile,T3,Actualizar el estado de un expediente,si,85,0,no,
+P018,Coordinador,Expo mobile,T4,Buscar un expediente usando filtros,si,104,0,no,
+P019,Evaluador,Web desktop,T1,Calificar la rúbrica de un expediente,si,249,0,no,
+P019,Evaluador,Web desktop,T2,Responder un mensaje del chat con un investigador,si,66,2,no,no encontró la opción a la primera
+P019,Evaluador,Web desktop,T3,Revisar los comentarios de otro evaluador,si,141,2,no,se perdió en el menú de opciones
+P019,Evaluador,Web desktop,T4,Enviar la evaluación final,si,83,1,no,completó sin dificultad
+P020,Evaluador,Web desktop,T1,Calificar la rúbrica de un expediente,si,178,0,no,
+P020,Evaluador,Web desktop,T2,Responder un mensaje del chat con un investigador,si,60,0,no,
+P020,Evaluador,Web desktop,T3,Revisar los comentarios de otro evaluador,si,63,0,no,
+P020,Evaluador,Web desktop,T4,Enviar la evaluación final,si,62,0,no,completó sin dificultad
+P021,Evaluador,Web desktop,T1,Calificar la rúbrica de un expediente,si,174,0,no,
+P021,Evaluador,Web desktop,T2,Responder un mensaje del chat con un investigador,si,52,0,no,completó sin dificultad
+P021,Evaluador,Web desktop,T3,Revisar los comentarios de otro evaluador,si,155,2,no,no encontró la opción a la primera
+P021,Evaluador,Web desktop,T4,Enviar la evaluación final,si,91,0,no,completó sin dificultad
+P022,Evaluador,Web desktop,T1,Calificar la rúbrica de un expediente,si,245,1,no,completó sin dificultad
+P022,Evaluador,Web desktop,T2,Responder un mensaje del chat con un investigador,si,70,0,no,completó sin dificultad
+P022,Evaluador,Web desktop,T3,Revisar los comentarios de otro evaluador,si,123,1,no,
+P022,Evaluador,Web desktop,T4,Enviar la evaluación final,si,110,0,no,
+P023,Evaluador,Web desktop,T1,Calificar la rúbrica de un expediente,si,216,1,no,
+P023,Evaluador,Web desktop,T2,Responder un mensaje del chat con un investigador,si,65,2,no,confundió el filtro de búsqueda
+P023,Evaluador,Web desktop,T3,Revisar los comentarios de otro evaluador,no,91,1,si,dudó en el botón de aprobar
+P023,Evaluador,Web desktop,T4,Enviar la evaluación final,si,91,1,no,
+P024,Evaluador,Web desktop,T1,Calificar la rúbrica de un expediente,si,246,0,no,
+P024,Evaluador,Web desktop,T2,Responder un mensaje del chat con un investigador,si,37,0,no,
+P024,Evaluador,Web desktop,T3,Revisar los comentarios de otro evaluador,si,154,0,no,
+P024,Evaluador,Web desktop,T4,Enviar la evaluación final,si,24,0,no,
+P025,Evaluador,Web desktop,T1,Calificar la rúbrica de un expediente,si,276,0,no,
+P025,Evaluador,Web desktop,T2,Responder un mensaje del chat con un investigador,si,52,0,no,
+P025,Evaluador,Web desktop,T3,Revisar los comentarios de otro evaluador,si,85,0,no,
+P025,Evaluador,Web desktop,T4,Enviar la evaluación final,no,95,1,no,no encontró la opción a la primera
+P026,Evaluador,Web desktop,T1,Calificar la rúbrica de un expediente,si,207,0,no,completó sin dificultad
+P026,Evaluador,Web desktop,T2,Responder un mensaje del chat con un investigador,si,40,0,no,
+P026,Evaluador,Web desktop,T3,Revisar los comentarios de otro evaluador,si,16,0,no,
+P026,Evaluador,Web desktop,T4,Enviar la evaluación final,si,48,0,no,
+P027,Evaluador,Web desktop,T1,Calificar la rúbrica de un expediente,si,294,2,no,se perdió en el menú de opciones
+P027,Evaluador,Web desktop,T2,Responder un mensaje del chat con un investigador,si,61,0,no,
+P027,Evaluador,Web desktop,T3,Revisar los comentarios de otro evaluador,si,91,0,no,
+P027,Evaluador,Web desktop,T4,Enviar la evaluación final,si,91,0,no,completó sin dificultad
+P028,Evaluador,Web desktop,T1,Calificar la rúbrica de un expediente,si,203,0,no,
+P028,Evaluador,Web desktop,T2,Responder un mensaje del chat con un investigador,si,35,0,no,
+P028,Evaluador,Web desktop,T3,Revisar los comentarios de otro evaluador,si,64,0,no,
+P028,Evaluador,Web desktop,T4,Enviar la evaluación final,si,105,0,no,
+P029,Evaluador,Expo mobile,T1,Calificar la rúbrica de un expediente,si,396,2,no,tuvo que pedir ayuda al moderador
+P029,Evaluador,Expo mobile,T2,Responder un mensaje del chat con un investigador,si,92,0,no,
+P029,Evaluador,Expo mobile,T3,Revisar los comentarios de otro evaluador,si,143,0,no,
+P029,Evaluador,Expo mobile,T4,Enviar la evaluación final,si,83,2,no,no identificó el ícono de notificaciones
+P030,Evaluador,Expo mobile,T1,Calificar la rúbrica de un expediente,si,188,1,no,
+P030,Evaluador,Expo mobile,T2,Responder un mensaje del chat con un investigador,si,61,1,no,
+P030,Evaluador,Expo mobile,T3,Revisar los comentarios de otro evaluador,si,124,1,no,completó sin dificultad
+P030,Evaluador,Expo mobile,T4,Enviar la evaluación final,si,109,2,no,no encontró la opción a la primera
+P031,Evaluador,Expo mobile,T1,Calificar la rúbrica de un expediente,si,207,0,no,
+P031,Evaluador,Expo mobile,T2,Responder un mensaje del chat con un investigador,no,85,0,no,reintentó varias veces el mismo paso
+P031,Evaluador,Expo mobile,T3,Revisar los comentarios de otro evaluador,si,123,1,no,
+P031,Evaluador,Expo mobile,T4,Enviar la evaluación final,si,74,1,no,
+P032,Evaluador,Expo mobile,T1,Calificar la rúbrica de un expediente,si,333,1,no,
+P032,Evaluador,Expo mobile,T2,Responder un mensaje del chat con un investigador,si,67,5,no,abandonó por confusión con los criterios
+P032,Evaluador,Expo mobile,T3,Revisar los comentarios de otro evaluador,si,117,1,no,
+P032,Evaluador,Expo mobile,T4,Enviar la evaluación final,si,122,1,no,
+P033,Evaluador,Expo mobile,T1,Calificar la rúbrica de un expediente,si,281,1,no,
+P033,Evaluador,Expo mobile,T2,Responder un mensaje del chat con un investigador,si,72,1,no,
+P033,Evaluador,Expo mobile,T3,Revisar los comentarios de otro evaluador,si,146,1,no,
+P033,Evaluador,Expo mobile,T4,Enviar la evaluación final,si,103,2,no,confundió el filtro de búsqueda
+P034,Evaluador,Expo mobile,T1,Calificar la rúbrica de un expediente,si,247,2,no,se perdió en el menú de opciones
+P034,Evaluador,Expo mobile,T2,Responder un mensaje del chat con un investigador,si,40,0,no,
+P034,Evaluador,Expo mobile,T3,Revisar los comentarios de otro evaluador,si,83,0,no,
+P034,Evaluador,Expo mobile,T4,Enviar la evaluación final,si,54,1,no,
+P035,Evaluador,Expo mobile,T1,Calificar la rúbrica de un expediente,si,189,1,no,
+P035,Evaluador,Expo mobile,T2,Responder un mensaje del chat con un investigador,si,55,0,no,
+P035,Evaluador,Expo mobile,T3,Revisar los comentarios de otro evaluador,si,107,1,no,
+P035,Evaluador,Expo mobile,T4,Enviar la evaluación final,si,101,1,no,
+P036,Evaluador,Expo mobile,T1,Calificar la rúbrica de un expediente,si,310,2,no,no identificó el ícono de notificaciones
+P036,Evaluador,Expo mobile,T2,Responder un mensaje del chat con un investigador,si,64,2,no,se perdió en el menú de opciones
+P036,Evaluador,Expo mobile,T3,Revisar los comentarios de otro evaluador,si,114,1,no,
+P036,Evaluador,Expo mobile,T4,Enviar la evaluación final,si,101,1,no,
+P037,Evaluador,Expo mobile,T1,Calificar la rúbrica de un expediente,si,314,1,no,
+P037,Evaluador,Expo mobile,T2,Responder un mensaje del chat con un investigador,no,75,1,si,confundió el filtro de búsqueda
+P037,Evaluador,Expo mobile,T3,Revisar los comentarios de otro evaluador,si,136,2,no,reintentó varias veces el mismo paso
+P037,Evaluador,Expo mobile,T4,Enviar la evaluación final,si,124,0,no,
+P038,Evaluador,Expo mobile,T1,Calificar la rúbrica de un expediente,si,289,2,no,abandonó por confusión con los criterios
+P038,Evaluador,Expo mobile,T2,Responder un mensaje del chat con un investigador,si,49,4,no,confundió el filtro de búsqueda
+P038,Evaluador,Expo mobile,T3,Revisar los comentarios de otro evaluador,si,86,2,no,abandonó por confusión con los criterios
+P038,Evaluador,Expo mobile,T4,Enviar la evaluación final,si,124,3,no,dudó en el botón de aprobar
+P039,Administrador,Web desktop,T1,Crear una cuenta de usuario nueva,si,49,0,no,
+P039,Administrador,Web desktop,T2,Configurar los parámetros del sistema,si,134,0,no,
+P039,Administrador,Web desktop,T3,Revisar el registro de auditoría,si,42,0,no,
+P039,Administrador,Web desktop,T4,Restablecer la contraseña de un usuario,no,69,0,si,no encontró la opción a la primera
+P040,Administrador,Web desktop,T1,Crear una cuenta de usuario nueva,si,148,0,no,
+P040,Administrador,Web desktop,T2,Configurar los parámetros del sistema,si,198,1,no,
+P040,Administrador,Web desktop,T3,Revisar el registro de auditoría,si,72,1,no,
+P040,Administrador,Web desktop,T4,Restablecer la contraseña de un usuario,si,74,1,no,
+P041,Administrador,Web desktop,T1,Crear una cuenta de usuario nueva,si,81,1,no,
+P041,Administrador,Web desktop,T2,Configurar los parámetros del sistema,si,70,1,no,
+P041,Administrador,Web desktop,T3,Revisar el registro de auditoría,si,66,0,no,completó sin dificultad
+P041,Administrador,Web desktop,T4,Restablecer la contraseña de un usuario,si,20,1,no,
+P042,Administrador,Web desktop,T1,Crear una cuenta de usuario nueva,si,83,0,no,
+P042,Administrador,Web desktop,T2,Configurar los parámetros del sistema,si,196,0,no,
+P042,Administrador,Web desktop,T3,Revisar el registro de auditoría,si,93,0,no,
+P042,Administrador,Web desktop,T4,Restablecer la contraseña de un usuario,si,53,0,no,
+P043,Administrador,Expo mobile,T1,Crear una cuenta de usuario nueva,si,149,2,no,dudó en el botón de aprobar
+P043,Administrador,Expo mobile,T2,Configurar los parámetros del sistema,si,204,0,no,
+P043,Administrador,Expo mobile,T3,Revisar el registro de auditoría,si,114,1,no,
+P043,Administrador,Expo mobile,T4,Restablecer la contraseña de un usuario,si,57,2,no,confundió el filtro de búsqueda
+P044,Administrador,Expo mobile,T1,Crear una cuenta de usuario nueva,si,121,1,no,completó sin dificultad
+P044,Administrador,Expo mobile,T2,Configurar los parámetros del sistema,si,144,0,no,
+P044,Administrador,Expo mobile,T3,Revisar el registro de auditoría,si,87,1,no,
+P044,Administrador,Expo mobile,T4,Restablecer la contraseña de un usuario,si,48,0,no,
+P045,Administrador,Expo mobile,T1,Crear una cuenta de usuario nueva,si,180,0,no,
+P045,Administrador,Expo mobile,T2,Configurar los parámetros del sistema,si,223,2,no,reintentó varias veces el mismo paso
+P045,Administrador,Expo mobile,T3,Revisar el registro de auditoría,si,153,0,no,
+P045,Administrador,Expo mobile,T4,Restablecer la contraseña de un usuario,si,90,1,no,
+P046,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,94,1,no,completó sin dificultad
+P046,Solicitante,Web desktop,T2,Subir un documento al expediente,si,160,1,no,completó sin dificultad
+P046,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,65,0,no,
+P046,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,79,1,no,
+P047,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,235,1,no,
+P047,Solicitante,Web desktop,T2,Subir un documento al expediente,si,142,0,no,
+P047,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,64,2,no,tuvo que pedir ayuda al moderador
+P047,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,67,1,no,
+P048,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,269,2,no,confundió el filtro de búsqueda
+P048,Solicitante,Web desktop,T2,Subir un documento al expediente,si,57,0,no,
+P048,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,38,1,no,
+P048,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,63,0,no,
+P049,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,no,176,0,si,no encontró la opción a la primera
+P049,Solicitante,Web desktop,T2,Subir un documento al expediente,si,145,0,no,completó sin dificultad
+P049,Solicitante,Web desktop,T3,Consultar el estado del expediente,no,52,1,no,se perdió en el menú de opciones
+P049,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,78,1,no,
+P050,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,152,2,no,no identificó el ícono de notificaciones
+P050,Solicitante,Web desktop,T2,Subir un documento al expediente,si,106,0,no,
+P050,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,59,0,no,
+P050,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,36,1,no,
+P051,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,no,190,2,si,no encontró la opción a la primera
+P051,Solicitante,Web desktop,T2,Subir un documento al expediente,no,113,4,si,no encontró la opción a la primera
+P051,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,81,2,no,confundió el filtro de búsqueda
+P051,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,57,1,no,
+P052,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,no,129,0,si,se perdió en el menú de opciones
+P052,Solicitante,Web desktop,T2,Subir un documento al expediente,si,93,0,no,
+P052,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,55,1,no,
+P052,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,21,0,no,
+P053,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,159,0,no,completó sin dificultad
+P053,Solicitante,Web desktop,T2,Subir un documento al expediente,si,112,0,no,
+P053,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,63,0,no,
+P053,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,35,0,no,completó sin dificultad
+P054,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,no,98,3,si,confundió el filtro de búsqueda
+P054,Solicitante,Web desktop,T2,Subir un documento al expediente,si,122,2,no,dudó en el botón de aprobar
+P054,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,67,1,no,
+P054,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,37,1,no,
+P055,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,185,0,no,
+P055,Solicitante,Web desktop,T2,Subir un documento al expediente,si,140,0,no,
+P055,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,25,0,no,
+P055,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,36,0,no,
+P056,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,290,0,no,completó sin dificultad
+P056,Solicitante,Web desktop,T2,Subir un documento al expediente,si,99,1,no,
+P056,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,60,1,no,
+P056,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,86,3,no,se perdió en el menú de opciones
+P057,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,123,1,no,
+P057,Solicitante,Web desktop,T2,Subir un documento al expediente,si,90,0,no,
+P057,Solicitante,Web desktop,T3,Consultar el estado del expediente,no,81,3,no,confundió el filtro de búsqueda
+P057,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,no,79,3,si,reintentó varias veces el mismo paso
+P058,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,135,1,no,
+P058,Solicitante,Web desktop,T2,Subir un documento al expediente,si,111,0,no,
+P058,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,29,0,no,completó sin dificultad
+P058,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,46,0,no,
+P059,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,164,0,no,
+P059,Solicitante,Web desktop,T2,Subir un documento al expediente,si,123,0,no,
+P059,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,15,0,no,completó sin dificultad
+P059,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,28,0,no,
+P060,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,316,0,no,
+P060,Solicitante,Web desktop,T2,Subir un documento al expediente,no,99,5,si,confundió el filtro de búsqueda
+P060,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,62,1,no,
+P060,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,75,1,no,
+P061,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,250,2,no,abandonó por confusión con los criterios
+P061,Solicitante,Web desktop,T2,Subir un documento al expediente,si,127,0,no,
+P061,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,51,0,no,
+P061,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,40,0,no,
+P062,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,245,1,no,
+P062,Solicitante,Web desktop,T2,Subir un documento al expediente,si,95,0,no,completó sin dificultad
+P062,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,44,0,no,
+P062,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,66,0,no,
+P063,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,95,1,no,
+P063,Solicitante,Web desktop,T2,Subir un documento al expediente,si,129,0,no,
+P063,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,68,0,no,
+P063,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,22,0,no,
+P064,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,156,0,no,
+P064,Solicitante,Web desktop,T2,Subir un documento al expediente,no,144,1,no,se perdió en el menú de opciones
+P064,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,73,0,no,
+P064,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,68,2,no,tuvo que pedir ayuda al moderador
+P065,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,191,0,no,
+P065,Solicitante,Web desktop,T2,Subir un documento al expediente,si,53,0,no,
+P065,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,43,1,no,
+P065,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,59,0,no,
+P066,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,191,0,no,
+P066,Solicitante,Web desktop,T2,Subir un documento al expediente,si,112,1,no,completó sin dificultad
+P066,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,42,1,no,
+P066,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,31,1,no,
+P067,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,215,1,no,
+P067,Solicitante,Web desktop,T2,Subir un documento al expediente,si,65,0,no,
+P067,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,15,1,no,
+P067,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,51,1,no,
+P068,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,199,1,no,
+P068,Solicitante,Web desktop,T2,Subir un documento al expediente,si,109,0,no,
+P068,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,86,0,no,
+P068,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,no,14,0,si,confundió el filtro de búsqueda
+P069,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,226,1,no,
+P069,Solicitante,Web desktop,T2,Subir un documento al expediente,si,141,0,no,
+P069,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,58,0,no,
+P069,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,70,0,no,
+P070,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,180,1,no,completó sin dificultad
+P070,Solicitante,Web desktop,T2,Subir un documento al expediente,si,144,0,no,
+P070,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,95,0,no,completó sin dificultad
+P070,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,77,1,no,
+P071,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,238,0,no,completó sin dificultad
+P071,Solicitante,Web desktop,T2,Subir un documento al expediente,si,161,0,no,completó sin dificultad
+P071,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,20,0,no,
+P071,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,39,0,no,
+P072,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,201,0,no,
+P072,Solicitante,Web desktop,T2,Subir un documento al expediente,si,147,0,no,
+P072,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,68,0,no,
+P072,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,59,2,no,dudó en el botón de aprobar
+P073,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,194,0,no,
+P073,Solicitante,Web desktop,T2,Subir un documento al expediente,si,85,1,no,completó sin dificultad
+P073,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,60,0,no,completó sin dificultad
+P073,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,34,1,no,
+P074,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,239,1,no,
+P074,Solicitante,Web desktop,T2,Subir un documento al expediente,si,135,1,no,
+P074,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,67,1,no,
+P074,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,80,0,no,completó sin dificultad
+P075,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,222,0,no,
+P075,Solicitante,Web desktop,T2,Subir un documento al expediente,si,145,1,no,
+P075,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,29,1,no,
+P075,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,41,1,no,completó sin dificultad
+P076,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,200,0,no,
+P076,Solicitante,Web desktop,T2,Subir un documento al expediente,si,137,1,no,
+P076,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,46,0,no,
+P076,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,40,0,no,
+P077,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,184,0,no,
+P077,Solicitante,Web desktop,T2,Subir un documento al expediente,si,136,1,no,
+P077,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,33,0,no,
+P077,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,35,1,no,
+P078,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,217,0,no,
+P078,Solicitante,Web desktop,T2,Subir un documento al expediente,si,45,0,no,
+P078,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,44,0,no,completó sin dificultad
+P078,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,no,39,0,si,se perdió en el menú de opciones
+P079,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,137,1,no,
+P079,Solicitante,Web desktop,T2,Subir un documento al expediente,si,98,0,no,
+P079,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,83,2,no,tuvo que pedir ayuda al moderador
+P079,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,29,0,no,
+P080,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,110,1,no,
+P080,Solicitante,Web desktop,T2,Subir un documento al expediente,si,119,0,no,
+P080,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,26,0,no,
+P080,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,82,1,no,
+P081,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,139,1,no,
+P081,Solicitante,Web desktop,T2,Subir un documento al expediente,si,114,2,no,se perdió en el menú de opciones
+P081,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,48,0,no,
+P081,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,50,0,no,
+P082,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,no,189,4,no,abandonó por confusión con los criterios
+P082,Solicitante,Web desktop,T2,Subir un documento al expediente,si,96,0,no,
+P082,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,77,0,no,
+P082,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,84,0,no,completó sin dificultad
+P083,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,250,0,no,completó sin dificultad
+P083,Solicitante,Web desktop,T2,Subir un documento al expediente,si,150,0,no,completó sin dificultad
+P083,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,50,0,no,
+P083,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,49,0,no,
+P084,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,si,273,0,no,completó sin dificultad
+P084,Solicitante,Web desktop,T2,Subir un documento al expediente,si,87,1,no,
+P084,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,38,0,no,
+P084,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,64,0,no,
+P085,Solicitante,Web desktop,T1,Crear un nuevo expediente de investigación,no,65,0,no,no identificó el ícono de notificaciones
+P085,Solicitante,Web desktop,T2,Subir un documento al expediente,si,104,1,no,
+P085,Solicitante,Web desktop,T3,Consultar el estado del expediente,si,63,1,no,
+P085,Solicitante,Web desktop,T4,Responder un mensaje del chat con la secretaría,si,86,2,no,se perdió en el menú de opciones
+P086,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,235,2,no,se perdió en el menú de opciones
+P086,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,148,1,no,
+P086,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,64,0,no,
+P086,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,85,0,no,
+P087,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,273,0,no,
+P087,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,104,1,no,
+P087,Solicitante,Expo mobile,T3,Consultar el estado del expediente,no,42,1,no,dudó en el botón de aprobar
+P087,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,80,0,no,
+P088,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,247,1,no,
+P088,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,154,1,no,
+P088,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,76,0,no,
+P088,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,45,0,no,
+P089,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,345,0,no,
+P089,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,152,0,no,
+P089,Solicitante,Expo mobile,T3,Consultar el estado del expediente,no,72,0,si,abandonó por confusión con los criterios
+P089,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,no,33,2,si,tuvo que pedir ayuda al moderador
+P090,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,307,4,no,reintentó varias veces el mismo paso
+P090,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,148,2,no,tuvo que pedir ayuda al moderador
+P090,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,45,0,no,
+P090,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,69,0,no,
+P091,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,289,1,no,
+P091,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,249,0,no,
+P091,Solicitante,Expo mobile,T3,Consultar el estado del expediente,no,34,2,si,abandonó por confusión con los criterios
+P091,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,108,3,no,confundió el filtro de búsqueda
+P092,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,125,1,no,
+P092,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,181,0,no,
+P092,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,34,0,no,
+P092,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,no,61,0,si,no identificó el ícono de notificaciones
+P093,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,144,2,no,reintentó varias veces el mismo paso
+P093,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,160,1,no,
+P093,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,77,0,no,
+P093,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,80,3,no,no encontró la opción a la primera
+P094,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,317,5,no,se perdió en el menú de opciones
+P094,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,150,3,no,se perdió en el menú de opciones
+P094,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,71,1,no,completó sin dificultad
+P094,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,101,2,no,reintentó varias veces el mismo paso
+P095,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,192,1,no,
+P095,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,143,0,no,
+P095,Solicitante,Expo mobile,T3,Consultar el estado del expediente,no,42,0,si,dudó en el botón de aprobar
+P095,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,57,4,no,no encontró la opción a la primera
+P096,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,no,212,3,no,reintentó varias veces el mismo paso
+P096,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,136,0,no,completó sin dificultad
+P096,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,61,0,no,
+P096,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,80,2,no,se perdió en el menú de opciones
+P097,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,255,0,no,
+P097,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,149,1,no,
+P097,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,97,0,no,
+P097,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,83,2,no,no identificó el ícono de notificaciones
+P098,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,299,1,no,
+P098,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,134,1,no,
+P098,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,43,0,no,
+P098,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,90,1,no,
+P099,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,177,1,no,
+P099,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,81,0,no,
+P099,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,38,0,no,
+P099,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,73,0,no,
+P100,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,135,3,no,reintentó varias veces el mismo paso
+P100,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,90,0,no,
+P100,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,74,0,no,
+P100,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,65,2,no,se perdió en el menú de opciones
+P101,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,313,1,no,
+P101,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,171,5,no,se perdió en el menú de opciones
+P101,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,88,0,no,
+P101,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,93,0,no,
+P102,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,no,147,5,si,reintentó varias veces el mismo paso
+P102,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,139,0,no,
+P102,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,75,2,no,abandonó por confusión con los criterios
+P102,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,50,2,no,no identificó el ícono de notificaciones
+P103,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,no,108,2,si,no identificó el ícono de notificaciones
+P103,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,120,0,no,
+P103,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,62,3,no,confundió el filtro de búsqueda
+P103,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,70,2,no,reintentó varias veces el mismo paso
+P104,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,277,0,no,
+P104,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,170,1,no,
+P104,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,50,0,no,
+P104,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,78,0,no,
+P105,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,386,2,no,tuvo que pedir ayuda al moderador
+P105,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,129,2,no,tuvo que pedir ayuda al moderador
+P105,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,69,3,no,se perdió en el menú de opciones
+P105,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,no,78,2,si,no encontró la opción a la primera
+P106,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,405,2,no,abandonó por confusión con los criterios
+P106,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,205,4,no,no encontró la opción a la primera
+P106,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,80,2,no,tuvo que pedir ayuda al moderador
+P106,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,85,1,no,
+P107,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,344,0,no,
+P107,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,158,3,no,confundió el filtro de búsqueda
+P107,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,136,2,no,se perdió en el menú de opciones
+P107,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,84,5,no,reintentó varias veces el mismo paso
+P108,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,no,73,1,si,dudó en el botón de aprobar
+P108,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,159,1,no,
+P108,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,91,3,no,reintentó varias veces el mismo paso
+P108,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,79,1,no,completó sin dificultad
+P109,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,211,0,no,
+P109,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,67,3,no,abandonó por confusión con los criterios
+P109,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,65,0,no,
+P109,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,55,1,no,
+P110,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,135,0,no,
+P110,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,158,1,no,
+P110,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,43,0,no,
+P110,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,56,0,no,
+P111,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,284,1,no,completó sin dificultad
+P111,Solicitante,Expo mobile,T2,Subir un documento al expediente,no,91,2,si,dudó en el botón de aprobar
+P111,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,63,0,no,
+P111,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,59,3,no,reintentó varias veces el mismo paso
+P112,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,235,2,no,reintentó varias veces el mismo paso
+P112,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,174,0,no,
+P112,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,80,1,no,
+P112,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,89,2,no,dudó en el botón de aprobar
+P113,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,290,2,no,no identificó el ícono de notificaciones
+P113,Solicitante,Expo mobile,T2,Subir un documento al expediente,no,85,1,si,no encontró la opción a la primera
+P113,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,72,0,no,
+P113,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,71,3,no,no identificó el ícono de notificaciones
+P114,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,236,2,no,no identificó el ícono de notificaciones
+P114,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,171,2,no,tuvo que pedir ayuda al moderador
+P114,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,112,0,no,
+P114,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,64,0,no,
+P115,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,245,1,no,
+P115,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,181,0,no,
+P115,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,46,3,no,tuvo que pedir ayuda al moderador
+P115,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,73,3,no,no encontró la opción a la primera
+P116,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,137,0,no,
+P116,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,133,1,no,
+P116,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,66,1,no,
+P116,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,105,0,no,
+P117,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,283,0,no,
+P117,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,153,1,no,
+P117,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,61,0,no,
+P117,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,73,1,no,
+P118,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,282,1,no,
+P118,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,176,1,no,
+P118,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,110,2,no,tuvo que pedir ayuda al moderador
+P118,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,79,1,no,
+P119,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,202,2,no,no identificó el ícono de notificaciones
+P119,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,165,3,no,se perdió en el menú de opciones
+P119,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,121,1,no,
+P119,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,67,1,no,
+P120,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,168,1,no,
+P120,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,166,0,no,
+P120,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,46,1,no,
+P120,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,no,64,2,no,reintentó varias veces el mismo paso
+P121,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,208,0,no,
+P121,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,93,2,no,reintentó varias veces el mismo paso
+P121,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,26,1,no,
+P121,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,49,2,no,tuvo que pedir ayuda al moderador
+P122,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,178,0,no,
+P122,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,132,3,no,dudó en el botón de aprobar
+P122,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,60,2,no,se perdió en el menú de opciones
+P122,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,49,1,no,
+P123,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,239,1,no,
+P123,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,118,4,no,dudó en el botón de aprobar
+P123,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,98,3,no,no encontró la opción a la primera
+P123,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,59,0,no,completó sin dificultad
+P124,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,150,1,no,
+P124,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,162,1,no,completó sin dificultad
+P124,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,70,0,no,
+P124,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,84,1,no,
+P125,Solicitante,Expo mobile,T1,Crear un nuevo expediente de investigación,si,234,1,no,
+P125,Solicitante,Expo mobile,T2,Subir un documento al expediente,si,95,0,no,
+P125,Solicitante,Expo mobile,T3,Consultar el estado del expediente,si,55,0,no,
+P125,Solicitante,Expo mobile,T4,Responder un mensaje del chat con la secretaría,si,49,1,no,
