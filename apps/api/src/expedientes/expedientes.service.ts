@@ -880,9 +880,16 @@ export class ExpedientesService {
 
     const formato = DOCUMENTO_FORMATOS[tipoDocumento] ?? FORMATO_FALLBACK;
 
+    // El navegador manda el nombre del archivo en UTF-8, pero la librería que
+    // parsea el multipart lo entrega interpretado como latin1: "Carta de
+    // aprobación.pdf" se guardaba como "Carta de aprobaciÃ³n.pdf" y así se
+    // veía en la lista de documentos del evaluador. Se corrige aquí, en el
+    // único punto por el que entra un archivo.
+    const nombreOriginal = Buffer.from(file.originalname, 'latin1').toString('utf8');
+
     // Validar extensión (criterio principal; el MIME del navegador no
     // siempre es fiable) — routes.py:489-496.
-    const ext = path.extname(file.originalname).toLowerCase();
+    const ext = path.extname(nombreOriginal).toLowerCase();
     if (!formato.ext.has(ext)) {
       throw new BadRequestException(
         `Este documento solo admite: ${formato.desc}. Subiste un archivo ${ext || 'sin extensión'}.`,
@@ -911,8 +918,8 @@ export class ExpedientesService {
 
     // Nombre único para evitar conflictos, igual que Python
     // (`{stem}_{uuid4().hex[:8]}{ext}`) — routes.py:527-529.
-    const extension = path.extname(file.originalname);
-    const stem = path.basename(file.originalname, extension);
+    const extension = path.extname(nombreOriginal);
+    const stem = path.basename(nombreOriginal, extension);
     const nombreUnico = `${stem}_${randomBytes(4).toString('hex')}${extension}`;
     const key = `uploads/${id}/${nombreUnico}`;
 
@@ -922,7 +929,7 @@ export class ExpedientesService {
       const doc = await tx.documento.create({
         data: {
           expedienteId: id,
-          nombreArchivo: file.originalname,
+          nombreArchivo: nombreOriginal,
           tipoDocumento,
           esObligatorio,
           rutaArchivo: key,
@@ -932,7 +939,7 @@ export class ExpedientesService {
         data: {
           expedienteId: id,
           accion: 'Documento subido',
-          detalle: `Archivo: ${file.originalname} (MIME: ${file.mimetype}, Tamaño: ${file.size} bytes)`,
+          detalle: `Archivo: ${nombreOriginal} (MIME: ${file.mimetype}, Tamaño: ${file.size} bytes)`,
           usuarioId: user.id,
         },
       });
