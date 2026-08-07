@@ -37,8 +37,12 @@ export default function Login() {
       <div
         className="mobile-only-block screen-body"
         style={{
-          background:
-            'linear-gradient(160deg, rgba(8,32,74,.92), rgba(11,87,183,.8)), repeating-linear-gradient(45deg, #3a5a8a 0 12px, #33517d 12px 24px)',
+          // Foto del campus con velo oscuro encima: sin él, el texto y el
+          // formulario se pierden sobre el cielo y la fachada blanca.
+          backgroundImage:
+            'linear-gradient(160deg, rgba(8,32,74,.93), rgba(8,32,74,.78)), url(/uch-campus.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       >
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 22px' }}>
@@ -111,7 +115,9 @@ export default function Login() {
 
       <div className="d-auth-shell">
         <div className="d-auth-hero">
-          <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(45deg, rgba(255,255,255,.04) 0 24px, transparent 24px 48px)' }} />
+          {/* El patrón de rayas diagonales se quitó: el fondo ahora es la foto
+              del campus (ver `.d-auth-hero` en global.css) y las rayas encima
+              solo ensuciaban la imagen. */}
           <div style={{ position: 'relative' }}>
             <Logo size={54} />
             <div style={{ fontSize: 26, fontWeight: 700, lineHeight: 1.3, margin: '22px 0 14px', maxWidth: 420 }}>

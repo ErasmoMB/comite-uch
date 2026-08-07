@@ -696,7 +696,14 @@ body {
 }
 .d-auth-hero {
   flex: 1;
-  background: linear-gradient(160deg, var(--navy), var(--primary));
+  /* Foto del campus con un velo oscuro encima: la imagen sola tiene cielo y
+     fachada muy claros, y el texto blanco se perdía sobre ellos. El degradado
+     es más denso a la izquierda, que es donde va el contenido. */
+  background-image:
+    linear-gradient(100deg, rgba(8, 32, 74, 0.97) 0%, rgba(8, 32, 74, 0.93) 40%, rgba(8, 32, 74, 0.6) 100%),
+    url('/uch-campus.jpg');
+  background-size: cover, cover;
+  background-position: center, center right;
   display: flex;
   flex-direction: column;
   justify-content: center;

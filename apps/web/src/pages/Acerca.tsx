@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { Logo } from '../components/shared'
 import { MOSTRAR_LOGO } from '../lib/marca'
 
+// Página institucional del Comité de Ética en el sitio de la UCH. Se centraliza
+// aquí para que web y móvil (apps/mobile/app/acerca.tsx) apunten al mismo sitio.
+const URL_COMITE_UCH = 'https://www2.uch.edu.pe/www.uch.edu.pe/investigacion/comite-de-etica.html'
+
 const PILARES = [
   { titulo: 'Evaluar', detalle: 'Revisión ética de proyectos.' },
   { titulo: 'Dictaminar', detalle: 'Emisión de dictámenes.' },
@@ -85,6 +89,18 @@ export default function Acerca() {
           </div>
         ))}
 
+        {/* rel="noopener noreferrer" con target="_blank": sin `noopener`, la
+            página abierta puede manipular la nuestra vía `window.opener`. */}
+        <a
+          className="btn btn-outline"
+          style={{ marginTop: 6, textDecoration: 'none', textAlign: 'center' }}
+          href={URL_COMITE_UCH}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Ver la página oficial del Comité ↗
+        </a>
+
         <button className="btn btn-primary" style={{ marginTop: 6 }} onClick={() => navigate('/login')}>
           Acceder al sistema
         </button>
@@ -97,9 +113,19 @@ export default function Acerca() {
           <Logo size={30} />
           <span style={{ fontSize: 14, fontWeight: 700 }}>Comité de Ética · UCH</span>
         </div>
-        <button className="d-btn-primary" onClick={() => navigate('/login')}>
-          Acceder al sistema
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <a
+            href={URL_COMITE_UCH}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: 'rgba(255,255,255,.85)', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+          >
+            Página oficial del Comité ↗
+          </a>
+          <button className="d-btn-primary" onClick={() => navigate('/login')}>
+            Acceder al sistema
+          </button>
+        </div>
       </header>
       <div style={{ flex: 1, overflowY: 'auto', padding: '48px 64px', display: 'flex', flexDirection: 'column', gap: 32 }}>
         <div style={{ maxWidth: 640 }}>

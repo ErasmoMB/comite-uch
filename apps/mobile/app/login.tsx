@@ -1,7 +1,7 @@
 // app/login.tsx
 import { useState } from 'react'
 import { Link, useRouter } from 'expo-router'
-import { StyleSheet, Text, View } from 'react-native'
+import { ImageBackground, StyleSheet, Text, View } from 'react-native'
 import { Button, ErrorText, Field, Input, Logo } from '../src/components/ui'
 import { colors } from '../src/lib/theme'
 import { ApiError } from '../src/lib/http'
@@ -35,7 +35,11 @@ export default function Login() {
   }
 
   return (
-    <View style={s.wrap}>
+    // Foto del campus de fondo, igual que el login web. El velo oscuro encima
+    // (`s.velo`) es imprescindible: sobre el cielo y la fachada blanca la
+    // tarjeta y el texto pierden contraste.
+    <ImageBackground source={require('../assets/uch-campus.jpg')} style={s.wrap} resizeMode="cover">
+      <View style={s.velo} />
       <View style={s.card}>
         <View style={s.header}>
           <Logo />
@@ -57,12 +61,15 @@ export default function Login() {
         </View>
         <Link href="/acerca" style={s.acerca}>Acerca del Comité de Ética</Link>
       </View>
-    </View>
+    </ImageBackground>
   )
 }
 
 const s = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.navy, justifyContent: 'center', padding: 22 },
+  // `...StyleSheet.absoluteFillObject` cubre toda la foto; la tarjeta va
+  // después en el árbol, así que queda por encima del velo.
+  velo: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(8,32,74,0.86)' },
   card: { backgroundColor: '#fff', borderRadius: 20, padding: 24, gap: 14 },
   header: { alignItems: 'center', gap: 6, marginBottom: 10 },
   title: { fontSize: 19, fontWeight: '700', color: colors.navy },

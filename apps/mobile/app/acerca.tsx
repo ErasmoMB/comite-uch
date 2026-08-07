@@ -1,10 +1,14 @@
 // app/acerca.tsx
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button, Card, Screen } from '../src/components/ui'
 import { colors } from '../src/lib/theme'
+
+// Página institucional del Comité de Ética en el sitio de la UCH. Debe
+// mantenerse igual que la de apps/web/src/pages/Acerca.tsx.
+const URL_COMITE_UCH = 'https://www2.uch.edu.pe/www.uch.edu.pe/investigacion/comite-de-etica.html'
 
 const PILARES = [
   { titulo: 'Evaluar', detalle: 'Revisión ética de proyectos.' },
@@ -67,7 +71,13 @@ export default function Acerca() {
           </Pressable>
         ))}
 
-        <Button title="Acceder al sistema" onPress={() => router.replace('/login')} style={{ marginTop: 6 }} />
+        <Button
+          title="Ver la página oficial del Comité ↗"
+          variant="outline"
+          onPress={() => { void Linking.openURL(URL_COMITE_UCH) }}
+          style={{ marginTop: 6 }}
+        />
+        <Button title="Acceder al sistema" onPress={() => router.replace('/login')} />
       </Screen>
     </View>
   )
