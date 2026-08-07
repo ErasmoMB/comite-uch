@@ -47,7 +47,7 @@ describe('Auth - registro/login/guards (contra el schema "test" aislado, no prod
 
   beforeAll(async () => {
     // Redirige DATABASE_URL/SECRET_KEY al schema Postgres "test" (misma
-    // instancia Supabase, aislado de `public`/producción) ANTES de cargar
+    // instancia Neon, aislado de `public`/producción) ANTES de cargar
     // AppModule. Es crucial hacerlo con require() diferido (no con un
     // `import` estático arriba del archivo): `JwtModule.register({ secret:
     // process.env.SECRET_KEY })` dentro del decorador de AuthModule se

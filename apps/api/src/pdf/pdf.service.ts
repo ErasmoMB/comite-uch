@@ -108,7 +108,13 @@ export class PdfService {
 
     const key = `dictamenes/${params.numeroDictamen}_${this.timestamp()}.pdf`;
     await this.storage.putObject(key, buffer, 'application/pdf');
-    return this.storage.getPresignedUrl(key, 604800); // 7 dias, igual que el backend Python
+    // Devuelve la KEY, no una URL firmada. Antes se guardaba en
+    // `Evaluacion.dictamenPdfPath` un presigned URL de 7 dias: al caducar, la
+    // descarga redirigia a un enlace muerto (400) y el dictamen quedaba
+    // inaccesible para siempre. Ademas median ~489 chars en una columna
+    // VARCHAR(500), al borde de desbordar. Con la key, `resolverDescarga`
+    // sirve el objeto desde el bucket y el enlace nunca caduca.
+    return key;
   }
 
   async generarEvaluacionCompleta(params: {

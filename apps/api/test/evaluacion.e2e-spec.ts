@@ -15,9 +15,9 @@ import { CRITERIOS_RUBRICA, PUNTAJE_TOTAL_MAX, resultadoPorPuntaje } from '../sr
 // Redirige DATABASE_URL/SECRET_KEY al schema Postgres "test" (aislado de
 // producción) ANTES de cargar AppModule. Mismo patrón que
 // test/expedientes.e2e-spec.ts. El `import 'dotenv/config'` de arriba ya
-// cargó SUPABASE_S3_* desde `.env` -- ese override NO los toca (solo
+// cargó R2_* desde `.env` -- ese override NO los toca (solo
 // redefine DATABASE_URL/SECRET_KEY), así que la generación de PDFs sigue
-// apuntando al bucket real de Supabase Storage (mismo patrón que
+// apuntando al bucket real de Cloudflare R2 (mismo patrón que
 // expedientes-documentos.e2e-spec.ts).
 loadEnv({ path: path.join(__dirname, '..', '.env.test'), override: true });
 
@@ -75,18 +75,20 @@ function criteriosBody(puntajes: number[]) {
   return CRITERIOS_RUBRICA.map((c, i) => ({ key: c.key, puntaje: puntajes[i], observacion: `obs-${c.key}` }));
 }
 
-// Extrae el key S3 de una URL firmada de Supabase Storage
-// (https://.../storage/v1/s3/<bucket>/<key>?X-Amz-...), para poder limpiar
-// el objeto de prueba al terminar (el key no viene expuesto directamente en
-// la respuesta -- solo la URL firmada, ver PdfService.generarDictamen).
-function keyDesdeUrlFirmada(url: string, bucket: string): string {
-  const u = new URL(url);
+// `dictamenPdfUrl` expone tal cual lo persistido en `Evaluacion.dictamenPdfPath`,
+// que hoy es la KEY del objeto en el bucket. Antes se guardaba ahí un presigned
+// URL de 7 días (que al caducar dejaba el dictamen inaccesible para siempre);
+// ver el comentario en PdfService.generarDictamen. Se conserva el fallback de
+// parseo por si algún registro viejo todavía trae una URL completa.
+function keyDeDictamen(valor: string, bucket: string): string {
+  if (!valor.startsWith('http')) return valor;
+  const u = new URL(valor);
   const marker = `/${bucket}/`;
   const idx = u.pathname.indexOf(marker);
   return decodeURIComponent(u.pathname.slice(idx + marker.length));
 }
 
-describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Supabase Storage)', () => {
+describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Cloudflare R2)', () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   let jwtService: JwtService;
@@ -107,9 +109,8 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Supa
   // codigoUnico real es corto (formato "N-AÑO", ej. "12-2026" -- ver
   // ExpedientesService.generarCodigoAnual): se usa un contador corto en vez
   // de `marca` completa para no inflar artificialmente el nombre del PDF de
-  // dictamen (`DIC-{codigoUnico}`), que junto con la URL firmada de 7 días
-  // de Supabase Storage debe entrar en la columna `dictamen_pdf_path`
-  // (VarChar(500), igual que en producción).
+  // dictamen (`DIC-{codigoUnico}`), que debe entrar en la columna
+  // `dictamen_pdf_path` (VarChar(500), igual que en producción).
   let contadorCodigo = 0;
   async function crearExpediente(titulo: string) {
     contadorCodigo += 1;
@@ -168,7 +169,7 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Supa
   });
 
   afterAll(async () => {
-    // Limpieza del bucket REAL de Supabase Storage.
+    // Limpieza del bucket REAL de Cloudflare R2.
     const client = storage.getClient();
     for (const key of clavesSubidas) {
       await client.deleteObject({ Bucket: storage.getBucket(), Key: key }).catch(() => null);
@@ -406,20 +407,24 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Supa
       expect(resp.body.resultado).toBe('aprobado_observaciones');
       expect(resp.body.rubricaPdfUrl).toBeTruthy();
       expect(resp.body.dictamenPdfUrl).toBeTruthy();
-      expect(resp.body.dictamenPdfUrl.startsWith('http')).toBe(true);
+      // Se persiste la KEY del objeto, no un presigned URL (que caducaba a los
+      // 7 días dejando el dictamen inaccesible). Ver PdfService.generarDictamen.
+      expect(resp.body.dictamenPdfUrl.startsWith('http')).toBe(false);
+      expect(resp.body.dictamenPdfUrl.startsWith('dictamenes/')).toBe(true);
       clavesSubidas.push(resp.body.rubricaPdfUrl);
-      clavesSubidas.push(keyDesdeUrlFirmada(resp.body.dictamenPdfUrl, storage.getBucket()));
+      clavesSubidas.push(keyDeDictamen(resp.body.dictamenPdfUrl, storage.getBucket()));
 
       const expActualizado = await prisma.expediente.findUnique({ where: { id: exp.id } });
       expect(expActualizado?.estado).toBe('aprobado_observaciones');
 
-      // El dictamen es una URL firmada -> debe redirigir (302), no servir bytes.
+      // Al ser una key (no una URL), la descarga sirve los bytes del PDF
+      // directamente desde el bucket en vez de redirigir a un enlace efímero.
       const descarga = await request(app.getHttpServer())
         .get(`/evaluacion/${evaluacionId}/descargar-dictamen`)
         .set('Authorization', `Bearer ${tokenFor(evaluador1Id)}`)
         .redirects(0);
-      expect(descarga.status).toBe(302);
-      expect(descarga.headers.location).toBe(resp.body.dictamenPdfUrl);
+      expect(descarga.status).toBe(200);
+      expect(descarga.body.subarray(0, 4).toString()).toBe('%PDF');
     }, 30000);
 
     it('aprobado (puntaje 19): genera SOLO el dictamen', async () => {
@@ -439,9 +444,10 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Supa
       expect(resp.body.puntajeTotal).toBe(19);
       expect(resp.body.resultado).toBe('aprobado');
       expect(resp.body.dictamenPdfUrl).toBeTruthy();
-      expect(resp.body.dictamenPdfUrl.startsWith('http')).toBe(true);
+      expect(resp.body.dictamenPdfUrl.startsWith('http')).toBe(false);
+      expect(resp.body.dictamenPdfUrl.startsWith('dictamenes/')).toBe(true);
       expect(resp.body.rubricaPdfUrl).toBeFalsy();
-      clavesSubidas.push(keyDesdeUrlFirmada(resp.body.dictamenPdfUrl, storage.getBucket()));
+      clavesSubidas.push(keyDeDictamen(resp.body.dictamenPdfUrl, storage.getBucket()));
 
       const expActualizado = await prisma.expediente.findUnique({ where: { id: exp.id } });
       expect(expActualizado?.estado).toBe('aprobado');
@@ -517,7 +523,7 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Supa
         .send({ criterios: criteriosBody(PUNTAJES_APROBADO_OBSERVACIONES), completa: true, observaciones: 'obs' });
       expect(resp.status).toBe(200);
       clavesSubidas.push(resp.body.rubricaPdfUrl);
-      clavesSubidas.push(keyDesdeUrlFirmada(resp.body.dictamenPdfUrl, storage.getBucket()));
+      clavesSubidas.push(keyDeDictamen(resp.body.dictamenPdfUrl, storage.getBucket()));
 
       expect(enviarEmailSpy).toHaveBeenCalledTimes(1);
       const params = enviarEmailSpy.mock.calls[0][0];
@@ -544,7 +550,7 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Supa
         .set('Authorization', `Bearer ${tokenFor(evaluador1Id)}`)
         .send({ criterios: criteriosBody(PUNTAJES_APROBADO), completa: true, observaciones: 'obs' });
       expect(resp.status).toBe(200);
-      clavesSubidas.push(keyDesdeUrlFirmada(resp.body.dictamenPdfUrl, storage.getBucket()));
+      clavesSubidas.push(keyDeDictamen(resp.body.dictamenPdfUrl, storage.getBucket()));
 
       expect(enviarEmailSpy).toHaveBeenCalledTimes(1);
       const params = enviarEmailSpy.mock.calls[0][0];
@@ -553,9 +559,14 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Supa
       expect(params.attachments?.[0].filename).toBe(`dictamen_evaluacion_${evaluacionId}.pdf`);
     }, 30000);
 
-    it('sin SMTP_HOST configurado (estado real de .env.test), EmailService cae en modo simulado y loguea con console.log', async () => {
-      expect(process.env.SMTP_HOST).toBeFalsy();
+    it('sin RESEND_API_KEY configurada, EmailService cae en modo simulado y loguea con console.log', async () => {
       enviarEmailSpy.mockRestore(); // deja correr el EmailService real (sin mockear) para este caso puntual
+
+      // `import 'dotenv/config'` carga el .env real, que SÍ trae RESEND_API_KEY.
+      // Sin desactivarla aquí, este test dispararía un envío real contra la API
+      // de Resend (consumiendo cuota por cada corrida de la suite).
+      const apiKeyOriginal = process.env.RESEND_API_KEY;
+      delete process.env.RESEND_API_KEY;
 
       const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
       try {
@@ -571,10 +582,10 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Supa
           .set('Authorization', `Bearer ${tokenFor(evaluador1Id)}`)
           .send({ criterios: criteriosBody(PUNTAJES_APROBADO), completa: true, observaciones: 'obs' });
         expect(resp.status).toBe(200);
-        clavesSubidas.push(keyDesdeUrlFirmada(resp.body.dictamenPdfUrl, storage.getBucket()));
+        clavesSubidas.push(keyDeDictamen(resp.body.dictamenPdfUrl, storage.getBucket()));
 
         const llamadaEmail = consoleLogSpy.mock.calls.find(([msg]) =>
-          typeof msg === 'string' && msg.includes('[EMAIL] SMTP no configurado'),
+          typeof msg === 'string' && msg.includes('[EMAIL] RESEND_API_KEY no configurada'),
         );
         expect(llamadaEmail).toBeDefined();
         const mensaje = llamadaEmail?.[0] as string;
@@ -582,6 +593,7 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Supa
         expect(mensaje).toContain(`Resultado de evaluación - ${exp.codigoUnico}`);
       } finally {
         consoleLogSpy.mockRestore();
+        if (apiKeyOriginal !== undefined) process.env.RESEND_API_KEY = apiKeyOriginal;
       }
     }, 30000);
   });

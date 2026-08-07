@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { StorageService } from '../src/storage/storage.service';
 
 describe('StorageService', () => {
-  it('sube, lee y borra un objeto de prueba en Supabase Storage', async () => {
+  it('sube, lee y borra un objeto de prueba en Cloudflare R2', async () => {
     const service = new StorageService();
     const key = 'verify-test/nestjs-conexion.txt';
     await service.putObject(key, Buffer.from('prueba nestjs'), 'text/plain');

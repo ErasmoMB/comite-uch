@@ -11,10 +11,8 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 /**
  * Cliente de almacenamiento de objetos (API S3-compatible).
  *
- * Hoy apunta a Supabase Storage (via su endpoint S3-compatible), el mismo
- * bucket que ya usa el backend Python (comite/backend/app/utils/storage.py).
- * Cualquier proveedor S3-compatible funciona con solo cambiar las variables
- * de entorno SUPABASE_S3_*.
+ * Apunta a Cloudflare R2 (migrado desde Supabase Storage). Cualquier
+ * proveedor S3-compatible funciona con solo cambiar las variables R2_*.
  */
 @Injectable()
 export class StorageService {
@@ -22,14 +20,15 @@ export class StorageService {
 
   constructor() {
     this.client = new S3Client({
-      endpoint: process.env.SUPABASE_S3_ENDPOINT,
-      region: process.env.SUPABASE_S3_REGION ?? 'us-east-1',
+      endpoint: process.env.R2_ENDPOINT,
+      // R2 expone una unica region logica, siempre "auto".
+      region: process.env.R2_REGION ?? 'auto',
       credentials: {
-        accessKeyId: process.env.SUPABASE_S3_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.SUPABASE_S3_SECRET_ACCESS_KEY!,
+        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
       },
-      // Supabase Storage (y varios S3-compatibles) requieren addressing por
-      // path, no virtual-hosted-style (bucket como subdominio).
+      // R2 (y varios S3-compatibles) requieren addressing por path, no
+      // virtual-hosted-style (bucket como subdominio).
       forcePathStyle: true,
     });
   }
@@ -44,7 +43,7 @@ export class StorageService {
   }
 
   getBucket(): string {
-    return process.env.SUPABASE_S3_BUCKET ?? 'comite-etica-documentos';
+    return process.env.R2_BUCKET ?? 'comite-etica-documentos';
   }
 
   // Documentos guardados antes de que S3/Supabase Storage estuviera

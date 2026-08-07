@@ -13,9 +13,9 @@ import { StorageService } from '../src/storage/storage.service';
 // Redirige DATABASE_URL/SECRET_KEY al schema Postgres "test" (aislado de
 // producción) ANTES de cargar AppModule. Mismo patrón que
 // test/expedientes.e2e-spec.ts. OJO: el `import 'dotenv/config'` de arriba ya
-// cargó SUPABASE_S3_* desde `.env` -- ese override NO los toca (solo
+// cargó R2_* desde `.env` -- ese override NO los toca (solo
 // redefine DATABASE_URL/SECRET_KEY), así que la subida real sigue apuntando
-// al bucket real de Supabase Storage (mismo patrón que storage.e2e-spec.ts).
+// al bucket real de Cloudflare R2 (mismo patrón que storage.e2e-spec.ts).
 loadEnv({ path: path.join(__dirname, '..', '.env.test'), override: true });
 
 const { AppModule } = require('../src/app.module') as {
@@ -29,7 +29,7 @@ const PDF_VALIDO = Buffer.from(
   'utf-8',
 );
 
-describe('Expedientes - documentos (e2e, contra el schema "test" aislado + bucket REAL de Supabase Storage)', () => {
+describe('Expedientes - documentos (e2e, contra el schema "test" aislado + bucket REAL de Cloudflare R2)', () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   let jwtService: JwtService;
@@ -143,7 +143,7 @@ describe('Expedientes - documentos (e2e, contra el schema "test" aislado + bucke
   });
 
   afterAll(async () => {
-    // Limpieza del bucket REAL de Supabase Storage (mismo patrón que
+    // Limpieza del bucket REAL de Cloudflare R2 (mismo patrón que
     // storage.e2e-spec.ts): borra cada objeto que la subida haya creado.
     const client = storage.getClient();
     for (const key of clavesSubidas) {
@@ -210,7 +210,7 @@ describe('Expedientes - documentos (e2e, contra el schema "test" aislado + bucke
   let documentoId: number;
   let rutaArchivo: string;
 
-  it('sube un documento valido: queda en la base Y realmente en el bucket de Supabase Storage', async () => {
+  it('sube un documento valido: queda en la base Y realmente en el bucket de Cloudflare R2', async () => {
     const resp = await request(app.getHttpServer())
       .post(`/expedientes/${expedienteBorradorId}/documentos`)
       .set('Authorization', `Bearer ${tokenFor(duenioId)}`)
@@ -227,7 +227,7 @@ describe('Expedientes - documentos (e2e, contra el schema "test" aislado + bucke
     rutaArchivo = resp.body.rutaArchivo;
     clavesSubidas.push(rutaArchivo);
 
-    // Verificación real contra Supabase Storage (mismo patrón que
+    // Verificación real contra Cloudflare R2 (mismo patrón que
     // storage.e2e-spec.ts): el objeto DEBE existir de verdad en el bucket.
     const head = await storage
       .getClient()
