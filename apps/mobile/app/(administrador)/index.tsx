@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Badge, Button, Card, ErrorText, Field, Input, Loading, Screen } from '../../src/components/ui'
 import Avatar from '../../src/components/Avatar'
 import { PuntoEstado } from '../../src/components/EstadoServidor'
+import SelectField from '../../src/components/SelectField'
 import { colors } from '../../src/lib/theme'
 import { ApiError } from '../../src/lib/http'
 import { filtrarUsuarios, type FiltroEstadoUsuario } from '../../src/lib/usuariosFilter'
@@ -240,15 +241,13 @@ export default function UsuariosAdmin() {
             <Field label="Contraseña">
               <Input placeholder="Mínimo 8 caracteres" value={form.password} onChangeText={v => actualizarForm('password', v)} secureTextEntry autoCapitalize="none" />
             </Field>
-            <Field label="Rol">
-              <View style={s.segment}>
-                {ROLES_INTERNOS.map(r => (
-                  <Pressable key={r} onPress={() => actualizarForm('rol', r)} style={[s.segItem, form.rol === r && s.segItemActive]}>
-                    <Text style={[s.segText, form.rol === r && s.segTextActive]}>{ROL_LABEL[r]}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            </Field>
+            <SelectField
+              label="Rol"
+              titulo="Rol del usuario"
+              valor={form.rol}
+              onChange={v => actualizarForm('rol', v as RolBackend)}
+              opciones={ROLES_INTERNOS.map(r => ({ valor: r, etiqueta: ROL_LABEL[r] }))}
+            />
             {form.rol === 'evaluador' && (
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <View style={{ flex: 1 }}>
@@ -273,16 +272,19 @@ export default function UsuariosAdmin() {
 
         <Input placeholder="Buscar por nombre o correo…" value={busqueda} onChangeText={setBusqueda} autoCapitalize="none" />
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.segmentScroll}>
-          <Pressable onPress={() => setFiltroRol('todos')} style={[s.segItem, filtroRol === 'todos' && s.segItemActive]}>
-            <Text style={[s.segText, filtroRol === 'todos' && s.segTextActive]}>Todos</Text>
-          </Pressable>
-          {rolesPresentes.map(r => (
-            <Pressable key={r} onPress={() => setFiltroRol(r)} style={[s.segItem, filtroRol === r && s.segItemActive]}>
-              <Text style={[s.segText, filtroRol === r && s.segTextActive]}>{ROL_LABEL[r]}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+        {/* Desplegable en vez de chips: las etiquetas de rol son largas
+            ("Estudiante de pregrado") y en una fila horizontal la última
+            quedaba cortada contra el borde, sin pista de que hubiera más. */}
+        <SelectField
+          label="Rol"
+          titulo="Filtrar por rol"
+          valor={filtroRol}
+          onChange={v => setFiltroRol(v as typeof filtroRol)}
+          opciones={[
+            { valor: 'todos', etiqueta: 'Todos los roles' },
+            ...rolesPresentes.map(r => ({ valor: r, etiqueta: ROL_LABEL[r] })),
+          ]}
+        />
         <View style={s.segment}>
           {ESTADOS.map(e => (
             <Pressable key={e.key} onPress={() => setFiltroEstado(e.key)} style={[s.segItem, filtroEstado === e.key && s.segItemActive]}>
