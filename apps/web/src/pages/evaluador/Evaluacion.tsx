@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import DesktopSidebar from '../../components/DesktopSidebar'
 import DesktopTopbar from '../../components/DesktopTopbar'
+import ConsultaIa from '../../components/ConsultaIa'
 import DocumentPreviewModal, { type DocumentPreviewState } from '../../components/DocumentPreviewModal'
 import { TopBar } from '../../components/shared'
 import { descargarArchivo } from '../../lib/descargas'
 import { ApiError } from '../../lib/http'
-import { evaluacionService, expedientesService } from '../../services'
+import { evaluacionService, expedientesService, iaService } from '../../services'
+import type { SugerenciaCriterio } from '../../services/ia.service'
 import { useConfirm } from '../../state/ConfirmContext'
 import type { DocumentoDto, ExpedienteDto, RubricaDto } from '../../types/api'
 import type { EvaluacionDto } from '../../types/api'
@@ -38,6 +40,55 @@ export default function Evaluacion() {
   const [guardando, setGuardando] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [declarando, setDeclarando] = useState(false)
+
+  // ---------- asistente de IA ----------
+  // `sugerencias` guarda lo propuesto por criterio; `confirmados` marca cuáles
+  // ya revisó la persona. Un criterio con sugerencia pendiente NO cuenta como
+  // decidido: el envío queda bloqueado mientras quede alguno sin confirmar.
+  const [iaDisponible, setIaDisponible] = useState(false)
+  const [sugerencias, setSugerencias] = useState<Record<string, SugerenciaCriterio>>({})
+  const [confirmados, setConfirmados] = useState<Record<string, boolean>>({})
+  const [analizando, setAnalizando] = useState(false)
+  const [errorIa, setErrorIa] = useState('')
+
+  const pendientesIa = Object.keys(sugerencias).filter(k => !confirmados[k])
+
+  useEffect(() => {
+    iaService
+      .estado()
+      .then(r => setIaDisponible(r.disponible))
+      .catch(() => setIaDisponible(false))
+  }, [])
+
+  async function analizarConIa(regenerar = false) {
+    setAnalizando(true)
+    setErrorIa('')
+    try {
+      const r = await iaService.sugerirRubrica(evaluacionId, regenerar)
+      const porKey: Record<string, SugerenciaCriterio> = {}
+      for (const c of r.criterios) porKey[c.key] = c
+      setSugerencias(porKey)
+      setConfirmados({})
+      // La sugerencia se vuelca a los campos reales para que el evaluador la
+      // edite en su sitio; hasta confirmarla se muestra en morado y no habilita
+      // el envío.
+      setCriteriosEstado(prev => {
+        const next = { ...prev }
+        for (const c of r.criterios) {
+          next[c.key] = { puntaje: String(c.puntaje), observacion: c.justificacion }
+        }
+        return next
+      })
+    } catch (e) {
+      setErrorIa(e instanceof ApiError ? e.message : 'No se pudo generar el borrador.')
+    } finally {
+      setAnalizando(false)
+    }
+  }
+
+  function confirmarCriterio(key: string) {
+    setConfirmados(prev => ({ ...prev, [key]: true }))
+  }
 
   useEffect(() => {
     if (!Number.isFinite(evaluacionId)) return
@@ -109,10 +160,18 @@ export default function Evaluacion() {
 
   function actualizarCriterio(key: string, campo: keyof CriterioEstado, valor: string) {
     setCriteriosEstado(prev => ({ ...prev, [key]: { ...prev[key], [campo]: valor } }))
+    // Tocar el puntaje o la observación ES la decisión humana: el criterio deja
+    // de estar pendiente sin necesidad de pulsar "Aceptar" aparte.
+    setConfirmados(prev => (prev[key] ? prev : { ...prev, [key]: true }))
   }
 
   function validarParaEnviar(): string | null {
     if (!rubrica) return 'La rúbrica aún no se ha cargado.'
+    // La IA no puede cerrar un dictamen: mientras quede una sugerencia sin
+    // revisar, el envío no procede.
+    if (pendientesIa.length > 0) {
+      return `Revisa las ${pendientesIa.length} sugerencia(s) de la IA antes de enviar la evaluación.`
+    }
     for (const c of rubrica.criterios) {
       const valor = criteriosEstado[c.key]?.puntaje ?? ''
       if (valor.trim() === '') return `Falta asignar el puntaje de "${c.nombre}".`
@@ -345,17 +404,102 @@ export default function Evaluacion() {
     )
   }
 
+  // Barra del asistente: botón + estado. Se oculta por completo si el servidor
+  // no tiene clave configurada.
+  function BarraIa({ variant }: { variant: 'mobile' | 'desktop' }) {
+    if (!iaDisponible || bloqueado) return null
+    const hay = Object.keys(sugerencias).length > 0
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <button
+          className={variant === 'mobile' ? 'btn' : 'd-btn-primary'}
+          style={{
+            background: 'var(--purple)',
+            color: '#fff',
+            border: 'none',
+            width: variant === 'desktop' ? '100%' : undefined,
+          }}
+          disabled={analizando}
+          onClick={() => analizarConIa(hay)}
+        >
+          {analizando ? 'Leyendo los documentos…' : hay ? '✦ Volver a analizar' : '✦ Analizar con IA'}
+        </button>
+
+        {analizando && (
+          <p className="small" style={{ margin: 0, color: 'var(--slate-500)' }}>
+            Puede tardar hasta un minuto. Mientras tanto puedes llenar la rúbrica a mano.
+          </p>
+        )}
+
+        {errorIa && <p className="field-error" style={{ margin: 0 }}>{errorIa}</p>}
+
+        {hay && !analizando && (
+          <div
+            style={{
+              background: 'var(--purple-bg)',
+              border: '1px solid var(--purple-line)',
+              borderRadius: 10,
+              padding: '11px 13px',
+            }}
+          >
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--purple-ink)', marginBottom: 3 }}>
+              ✦ Borrador generado
+            </div>
+            <div style={{ fontSize: 12.5, color: 'var(--slate-500)', lineHeight: 1.5 }}>
+              {pendientesIa.length > 0 ? (
+                <>
+                  Revisa cada criterio antes de enviar. Quedan{' '}
+                  <strong style={{ color: 'var(--purple-ink)' }}>{pendientesIa.length} sin confirmar</strong>.
+                </>
+              ) : (
+                'Revisaste todos los criterios. Ya puedes enviar la evaluación.'
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   function CriteriosForm({ variant }: { variant: 'mobile' | 'desktop' }) {
     if (!rubrica) return null
     const fieldClass = variant === 'mobile' ? 'field' : ''
     const textareaClass = variant === 'mobile' ? 'textarea' : 'd-field d-textarea'
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {rubrica.criterios.map(c => (
-          <div key={c.key} className="card" style={{ padding: variant === 'mobile' ? '13px 14px' : '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+        {rubrica.criterios.map(c => {
+          const sug = sugerencias[c.key]
+          const pendiente = !!sug && !confirmados[c.key]
+          return (
+          <div
+            key={c.key}
+            className="card"
+            style={{
+              padding: variant === 'mobile' ? '13px 14px' : '16px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+              ...(pendiente
+                ? { borderColor: 'var(--purple-line)', background: 'var(--purple-bg)' }
+                : {}),
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
               <strong style={{ fontSize: 13.5 }}>{c.nombre}</strong>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--slate-400)', flex: 'none' }}>máx. {c.puntajeMax} pts</span>
+              {pendiente ? (
+                <span
+                  style={{
+                    fontSize: 11, fontWeight: 700, flex: 'none',
+                    background: '#fff', color: 'var(--purple-ink)',
+                    border: '1px solid var(--purple-line)',
+                    padding: '2px 9px', borderRadius: 20,
+                  }}
+                >
+                  ✦ Sugerido
+                </span>
+              ) : (
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--slate-400)', flex: 'none' }}>máx. {c.puntajeMax} pts</span>
+              )}
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
               <div className={fieldClass} style={{ width: 130 }}>
@@ -406,8 +550,33 @@ export default function Evaluacion() {
                 onChange={e => actualizarCriterio(c.key, 'observacion', e.target.value)}
               />
             </div>
+
+            {pendiente && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                {/* La cita es lo que hace verificable la sugerencia: sin ella el
+                    evaluador tendría que creerle a la IA o releer todo. */}
+                <span
+                  style={{
+                    fontSize: 11.5, fontFamily: 'ui-monospace, monospace',
+                    background: '#fff', color: 'var(--purple-ink)',
+                    border: '1px solid var(--purple-line)',
+                    padding: '3px 8px', borderRadius: 6,
+                  }}
+                >
+                  {sug.cita}
+                </span>
+                <button
+                  className="btn"
+                  style={{ background: 'var(--purple)', color: '#fff', border: 'none', padding: '7px 16px', fontSize: 12.5 }}
+                  onClick={() => confirmarCriterio(c.key)}
+                >
+                  Aceptar
+                </button>
+              </div>
+            )}
           </div>
-        ))}
+          )
+        })}
       </div>
     )
   }
@@ -484,7 +653,10 @@ export default function Evaluacion() {
               <ContextoExpediente variant="mobile" />
               <InvestigadorExpediente variant="mobile" />
               <DocumentosRevision variant="mobile" />
+              {iaDisponible && evaluacion && <ConsultaIa expedienteId={evaluacion.expedienteId} />}
               <ProgresoResultado variant="mobile" />
+
+              <BarraIa variant="mobile" />
 
               <strong style={{ fontSize: 13, color: 'var(--navy)' }}>Criterios de evaluación</strong>
               <CriteriosForm variant="mobile" />
@@ -529,6 +701,8 @@ export default function Evaluacion() {
             {evaluacion && rubrica && !errorCarga && (
               <div style={{ display: 'flex', gap: 20, flex: 1, minHeight: 0 }}>
                 <div style={{ flex: 1.6, display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
+                  <BarraIa variant="desktop" />
+
                   <strong style={{ fontSize: 14, color: 'var(--navy)' }}>Criterios de evaluación</strong>
                   <CriteriosForm variant="desktop" />
 
@@ -549,6 +723,7 @@ export default function Evaluacion() {
                   <ContextoExpediente variant="desktop" />
                   <InvestigadorExpediente variant="desktop" />
                   <DocumentosRevision variant="desktop" />
+                  {iaDisponible && evaluacion && <ConsultaIa expedienteId={evaluacion.expedienteId} />}
                   <ProgresoResultado variant="desktop" />
 
                   <div className="card" style={{ padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>

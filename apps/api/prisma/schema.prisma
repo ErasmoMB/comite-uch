@@ -153,8 +153,28 @@ model Evaluacion {
   expediente Expediente          @relation(fields: [expedienteId], references: [id])
   evaluador  User                @relation(fields: [evaluadorId], references: [id])
   criterios  EvaluacionCriterio[]
+  sugerencia SugerenciaIa?
 
   @@map("evaluaciones")
+}
+
+// Borrador de rúbrica generado por IA para una evaluación. Se guarda por dos
+// razones: no volver a pagar el mismo análisis si el evaluador recarga, y dejar
+// constancia de qué PROPUSO la IA frente a lo que finalmente DECIDIÓ la persona
+// (que vive en `evaluacion_criterios`). Un dictamen tiene que poder auditarse.
+//
+// Tabla aditiva: no modifica ninguna existente.
+model SugerenciaIa {
+  id           Int      @id @default(autoincrement())
+  evaluacionId Int      @unique @map("evaluacion_id")
+  // Las 7 sugerencias tal como las devolvió el modelo, ya validadas.
+  contenido    Json
+  modelo       String   @db.VarChar(100)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  evaluacion Evaluacion @relation(fields: [evaluacionId], references: [id])
+
+  @@map("sugerencias_ia")
 }
 
 model EvaluacionCriterio {

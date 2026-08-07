@@ -21,8 +21,10 @@ export default function EvaluadorLayout() {
     <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: colors.slate400 }}>
       <Tabs.Screen name="index" options={{ title: 'Bandeja', tabBarIcon: ({ color }) => <TabIcon name="bandeja" color={color} /> }} />
       <Tabs.Screen name="perfil" options={{ title: 'Perfil', tabBarIcon: ({ color }) => <TabIcon name="perfil" color={color} /> }} />
-      {/* Ruta sin pestaña propia (se oculta del tab bar): se llega solo desde la Bandeja. */}
+      {/* Rutas sin pestaña propia (se ocultan del tab bar): se llega a ellas
+          desde la Bandeja y desde la evaluación, respectivamente. */}
       <Tabs.Screen name="evaluacion/[id]" options={{ href: null }} />
+      <Tabs.Screen name="consultar/[id]" options={{ href: null }} />
     </Tabs>
   )
 }

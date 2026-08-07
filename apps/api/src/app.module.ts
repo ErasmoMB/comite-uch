@@ -15,6 +15,7 @@ import { EmailModule } from './email/email.module';
 import { ConfigModule } from './config/config.module';
 import { ReportesModule } from './reportes/reportes.module';
 import { PlantillasModule } from './plantillas/plantillas.module';
+import { IaModule } from './ia/ia.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PlantillasModule } from './plantillas/plantillas.module';
     ConfigModule,
     ReportesModule,
     PlantillasModule,
+    IaModule,
   ],
   controllers: [AppController],
   providers: [

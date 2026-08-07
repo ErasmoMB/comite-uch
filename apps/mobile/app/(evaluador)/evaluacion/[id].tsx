@@ -1,6 +1,6 @@
 // app/(evaluador)/evaluacion/[id].tsx
 import { useEffect, useMemo, useState } from 'react'
-import { useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Button, Card, ErrorText, Field, Loading, Screen, SectionTitle, TextArea } from '../../../src/components/ui'
 import TopBar from '../../../src/components/TopBar'
@@ -9,7 +9,8 @@ import { formatearFecha } from '../../../src/lib/dates'
 import { ApiError, apiUrl } from '../../../src/lib/http'
 import { abrirDocumento } from '../../../src/lib/documentDownload'
 import { puntajeAcumulado, resultadoPrevisto, type ResultadoRubrica } from '../../../src/lib/rubricaResultado'
-import { evaluacionService, expedientesService } from '../../../src/services'
+import { evaluacionService, expedientesService, iaService } from '../../../src/services'
+import type { SugerenciaCriterio } from '../../../src/services/ia.service'
 import { useConfirm } from '../../../src/state/ConfirmContext'
 import type { DocumentoDto, ExpedienteDto, RubricaDto } from '../../../src/types/api'
 import type { EvaluacionDetalleDto } from '../../../src/services/evaluacion.service'
@@ -31,6 +32,7 @@ const RESULTADO_COLOR: Record<ResultadoRubrica, string> = {
 }
 
 export default function Evaluacion() {
+  const router = useRouter()
   const { id } = useLocalSearchParams<{ id: string }>()
   const evaluacionId = Number(id)
   const confirmar = useConfirm()
@@ -52,6 +54,42 @@ export default function Evaluacion() {
   const [declarando, setDeclarando] = useState(false)
   const [abriendo, setAbriendo] = useState<number | null>(null)
   const [descargando, setDescargando] = useState<'rubrica' | 'dictamen' | null>(null)
+
+  // ---------- asistente de IA ----------
+  // Una sugerencia pendiente NO cuenta como criterio decidido: el envio queda
+  // bloqueado mientras quede alguna sin confirmar.
+  const [iaDisponible, setIaDisponible] = useState(false)
+  const [sugerencias, setSugerencias] = useState<Record<string, SugerenciaCriterio>>({})
+  const [confirmados, setConfirmados] = useState<Record<string, boolean>>({})
+  const [analizando, setAnalizando] = useState(false)
+  const [errorIa, setErrorIa] = useState('')
+
+  const pendientesIa = Object.keys(sugerencias).filter(k => !confirmados[k])
+
+  useEffect(() => {
+    iaService.estado().then(r => setIaDisponible(r.disponible)).catch(() => setIaDisponible(false))
+  }, [])
+
+  async function analizarConIa(regenerar = false) {
+    setAnalizando(true)
+    setErrorIa('')
+    try {
+      const r = await iaService.sugerirRubrica(evaluacionId, regenerar)
+      const porKey: Record<string, SugerenciaCriterio> = {}
+      for (const c of r.criterios) porKey[c.key] = c
+      setSugerencias(porKey)
+      setConfirmados({})
+      setCriteriosEstado(prev => {
+        const next = { ...prev }
+        for (const c of r.criterios) next[c.key] = { puntaje: String(c.puntaje), observacion: c.justificacion }
+        return next
+      })
+    } catch (e) {
+      setErrorIa(e instanceof ApiError ? e.message : 'No se pudo generar el borrador.')
+    } finally {
+      setAnalizando(false)
+    }
+  }
 
   useEffect(() => {
     if (!Number.isFinite(evaluacionId)) {
@@ -120,10 +158,16 @@ export default function Evaluacion() {
 
   function actualizarCriterio(key: string, campo: keyof CriterioEstado, valor: string) {
     setCriteriosEstado(prev => ({ ...prev, [key]: { ...prev[key], [campo]: valor } }))
+    // Tocar el puntaje o la observacion ES la decision humana.
+    setConfirmados(prev => (prev[key] ? prev : { ...prev, [key]: true }))
   }
 
   function validarParaEnviar(): string | null {
     if (!rubrica) return 'La rúbrica aún no se ha cargado.'
+    // La IA no puede cerrar un dictamen.
+    if (pendientesIa.length > 0) {
+      return `Revisa las ${pendientesIa.length} sugerencia(s) de la IA antes de enviar la evaluación.`
+    }
     for (const c of rubrica.criterios) {
       const valor = criteriosEstado[c.key]?.puntaje ?? ''
       if (valor.trim() === '') return `Falta asignar el puntaje de "${c.nombre}".`
@@ -297,6 +341,14 @@ export default function Evaluacion() {
           {documentos.length === 0 && <Text style={s.vacioRow}>No hay documentos disponibles para este expediente en este momento.</Text>}
         </Card>
 
+        {iaDisponible && evaluacion && (
+          <Button
+            title={'✦  Consultar el expediente'}
+            variant="outline"
+            onPress={() => router.push({ pathname: '/(evaluador)/consultar/[id]', params: { id: String(evaluacion.expedienteId) } })}
+          />
+        )}
+
         {/* Progreso / resultado previsto (en vivo) */}
         <Card>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
@@ -312,17 +364,51 @@ export default function Evaluacion() {
           </View>
         </Card>
 
+        {/* Asistente de IA: se oculta si el servidor no tiene clave. */}
+        {iaDisponible && !bloqueado && (
+          <View style={{ gap: 10 }}>
+            <Button
+              title={analizando ? 'Leyendo los documentos…' : Object.keys(sugerencias).length ? '✦  Volver a analizar' : '✦  Analizar con IA'}
+              loading={analizando}
+              onPress={() => analizarConIa(Object.keys(sugerencias).length > 0)}
+              style={{ backgroundColor: MORADO }}
+            />
+            {analizando && (
+              <Text style={s2.iaNota}>
+                Puede tardar hasta un minuto. Mientras tanto puedes llenar la rúbrica a mano.
+              </Text>
+            )}
+            {!!errorIa && <ErrorText>{errorIa}</ErrorText>}
+            {Object.keys(sugerencias).length > 0 && !analizando && (
+              <View style={s2.iaBanner}>
+                <Text style={s2.iaBannerT}>{'✦'} Borrador generado</Text>
+                <Text style={s2.iaBannerP}>
+                  {pendientesIa.length > 0
+                    ? `Revisa cada criterio antes de enviar. Quedan ${pendientesIa.length} sin confirmar.`
+                    : 'Revisaste todos los criterios. Ya puedes enviar la evaluación.'}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Criterios (Selector-píldora por puntaje) */}
         <SectionTitle>Criterios de evaluación</SectionTitle>
         <View style={{ gap: 12 }}>
           {rubrica.criterios.map(c => {
             const opciones = Array.from({ length: c.puntajeMax + 1 }, (_, n) => n)
             const puntajeSel = criteriosEstado[c.key]?.puntaje ?? ''
+            const sug = sugerencias[c.key]
+            const pendiente = !!sug && !confirmados[c.key]
             return (
-              <Card key={c.key} style={{ gap: 10 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+              <Card key={c.key} style={[{ gap: 10 }, pendiente && s2.cardIa]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
                   <Text style={s.critNombre}>{c.nombre}</Text>
-                  <Text style={s.critMax}>máx. {c.puntajeMax} pts</Text>
+                  {pendiente ? (
+                    <Text style={s2.chipIa}>{'✦'} Sugerido</Text>
+                  ) : (
+                    <Text style={s.critMax}>máx. {c.puntajeMax} pts</Text>
+                  )}
                 </View>
                 <Text style={s.critDesc}>{c.descripcion}</Text>
                 <Field label="Puntaje">
@@ -351,6 +437,17 @@ export default function Evaluacion() {
                     style={{ minHeight: 60 }}
                   />
                 </Field>
+                {pendiente && (
+                  <View style={{ gap: 8 }}>
+                    {/* La cita hace verificable la sugerencia. */}
+                    <Text style={s2.cita}>{sug.cita}</Text>
+                    <Button
+                      title="Aceptar"
+                      onPress={() => setConfirmados(prev => ({ ...prev, [c.key]: true }))}
+                      style={{ backgroundColor: MORADO }}
+                    />
+                  </View>
+                )}
               </Card>
             )
           })}
@@ -426,4 +523,30 @@ const s = StyleSheet.create({
   segTextActive: { color: '#fff' },
   exito: { color: colors.success, fontSize: 13, fontWeight: '600' },
   muted: { fontSize: 13, color: colors.slate500, lineHeight: 18 },
+})
+
+// Morado del asistente: mismo valor que `--purple` en la web. Marca lo que
+// propuso la IA y todavia no confirmo la persona; no es un estado del
+// expediente, por eso no vive en `theme.ts` junto a los estados.
+const MORADO = '#6941c6'
+
+const s2 = StyleSheet.create({
+  cardIa: { borderColor: '#e4d6ff', backgroundColor: '#f3edff' },
+  chipIa: {
+    fontSize: 10.5, fontWeight: '700', color: '#5b3fa0', backgroundColor: '#fff',
+    borderWidth: 1, borderColor: '#e4d6ff', paddingHorizontal: 9, paddingVertical: 3,
+    borderRadius: 20, overflow: 'hidden',
+  },
+  cita: {
+    fontSize: 11, color: '#5b3fa0', backgroundColor: '#fff',
+    borderWidth: 1, borderColor: '#e4d6ff', paddingHorizontal: 8, paddingVertical: 4,
+    borderRadius: 6, alignSelf: 'flex-start', overflow: 'hidden',
+  },
+  iaNota: { fontSize: 12, color: colors.slate500, lineHeight: 17 },
+  iaBanner: {
+    backgroundColor: '#f3edff', borderWidth: 1, borderColor: '#e4d6ff',
+    borderRadius: 10, padding: 12, gap: 3,
+  },
+  iaBannerT: { fontSize: 12.5, fontWeight: '700', color: '#5b3fa0' },
+  iaBannerP: { fontSize: 12.5, color: colors.slate500, lineHeight: 18 },
 })
