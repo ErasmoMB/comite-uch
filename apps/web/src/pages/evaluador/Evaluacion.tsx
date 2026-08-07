@@ -170,7 +170,9 @@ export default function Evaluacion() {
     // La IA no puede cerrar un dictamen: mientras quede una sugerencia sin
     // revisar, el envío no procede.
     if (pendientesIa.length > 0) {
-      return `Revisa las ${pendientesIa.length} sugerencia(s) de la IA antes de enviar la evaluación.`
+      return pendientesIa.length === 1
+        ? 'Revisa la sugerencia de la IA que queda sin confirmar antes de enviar la evaluación.'
+        : `Revisa las ${pendientesIa.length} sugerencias de la IA antes de enviar la evaluación.`
     }
     for (const c of rubrica.criterios) {
       const valor = criteriosEstado[c.key]?.puntaje ?? ''
@@ -541,9 +543,15 @@ export default function Evaluacion() {
             <div className={fieldClass}>
               {variant === 'mobile' && <label>Observación (opcional)</label>}
               {variant === 'desktop' && <div className="d-field-label">Observación (opcional)</div>}
+              {/* Con una sugerencia sin confirmar el campo crece: la
+                  justificación de la IA ocupa varias líneas y, al tamaño
+                  normal, quedaba cortada con scroll interno — justo el texto
+                  que el evaluador necesita leer entero para decidir. */}
               <textarea
                 className={textareaClass}
-                style={variant === 'desktop' ? { minHeight: 64 } : undefined}
+                style={
+                  variant === 'desktop' ? { minHeight: pendiente ? 116 : 64 } : pendiente ? { minHeight: 132 } : undefined
+                }
                 disabled={bloqueado}
                 placeholder="Comentario sobre este criterio…"
                 value={criteriosEstado[c.key]?.observacion ?? ''}

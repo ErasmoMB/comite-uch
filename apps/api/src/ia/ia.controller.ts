@@ -38,6 +38,16 @@ export class IaController {
     return this.ia.sugerirRubrica(id, req.user, regenerar === 'true');
   }
 
+  /**
+   * GET /ia/expediente/:id/documentos
+   * Documentos del expediente sobre los que se puede preguntar. La interfaz
+   * arma el selector con esto en vez de asumir qué subió el solicitante.
+   */
+  @Get('expediente/:id/documentos')
+  documentos(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.ia.listarDocumentos(id, req.user);
+  }
+
   /** POST /ia/expediente/:id/consultar */
   @Post('expediente/:id/consultar')
   consultar(
@@ -45,6 +55,6 @@ export class IaController {
     @Body() dto: ConsultarDto,
     @Req() req: any,
   ) {
-    return this.ia.consultarExpediente(id, dto.pregunta, req.user);
+    return this.ia.consultarExpediente(id, dto.pregunta, req.user, dto.documentoId);
   }
 }

@@ -1,12 +1,13 @@
 import { Injectable, Logger, ServiceUnavailableException, BadGatewayException } from '@nestjs/common';
+import type { EntradaIa, ProveedorIa } from './proveedor-ia';
 
 /**
  * Único punto del sistema que habla con la API de Gemini.
  *
  * Todo lo específico del proveedor vive aquí: la URL, la forma del cuerpo, cómo
- * se adjunta un PDF y cómo se pide salida estructurada. Si mañana se cambia a
- * Claude u otro proveedor, se reemplaza este archivo y nada más — el mismo
- * criterio con el que `StorageService` aisló a R2.
+ * se adjunta un PDF y cómo se pide salida estructurada. Implementa
+ * `ProveedorIa`, igual que `claude.client.ts`, así que el servicio no distingue
+ * cuál de los dos está atendiendo.
  */
 
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
@@ -36,8 +37,10 @@ export interface OpcionesGenerar {
 }
 
 @Injectable()
-export class GeminiClient {
+export class GeminiClient implements ProveedorIa {
   private readonly logger = new Logger(GeminiClient.name);
+
+  readonly nombre = 'gemini';
 
   get modelo(): string {
     return process.env.GEMINI_MODELO?.trim() || MODELO_POR_DEFECTO;
@@ -58,8 +61,32 @@ export class GeminiClient {
     return key;
   }
 
+  /** Traduce la entrada neutral a las `parts` que espera Gemini. */
+  private partes(entrada: EntradaIa): Parte[] {
+    const partes: Parte[] = [];
+    if (entrada.archivo) {
+      partes.push(GeminiClient.archivo(entrada.archivo.buffer, entrada.archivo.mime));
+    }
+    partes.push({ text: entrada.texto });
+    return partes;
+  }
+
+  async generar(entrada: EntradaIa): Promise<string> {
+    return this.pedir(this.partes(entrada));
+  }
+
+  async generarJson<T>(entrada: EntradaIa, esquema: Record<string, unknown>): Promise<T> {
+    const texto = await this.pedir(this.partes(entrada), { esquema });
+    try {
+      return JSON.parse(texto) as T;
+    } catch {
+      this.logger.error(`Gemini devolvió JSON inválido: ${texto.slice(0, 300)}`);
+      throw new BadGatewayException('El asistente de IA devolvió una respuesta con formato inesperado.');
+    }
+  }
+
   /** Devuelve el texto crudo de la respuesta del modelo. */
-  async generar(partes: Parte[], opciones: OpcionesGenerar = {}): Promise<string> {
+  private async pedir(partes: Parte[], opciones: OpcionesGenerar = {}): Promise<string> {
     const key = this.assertConfigurado();
 
     const generationConfig: Record<string, unknown> = {
@@ -113,19 +140,8 @@ export class GeminiClient {
     return texto;
   }
 
-  /** Igual que `generar`, pero parsea la respuesta como JSON. */
-  async generarJson<T>(partes: Parte[], esquema: Record<string, unknown>): Promise<T> {
-    const texto = await this.generar(partes, { esquema });
-    try {
-      return JSON.parse(texto) as T;
-    } catch {
-      this.logger.error(`Gemini devolvió JSON inválido: ${texto.slice(0, 300)}`);
-      throw new BadGatewayException('El asistente de IA devolvió una respuesta con formato inesperado.');
-    }
-  }
-
   /** Adjunta un documento (PDF) al prompt. */
-  static archivo(buffer: Buffer, mimeType = 'application/pdf'): ParteArchivo {
+  private static archivo(buffer: Buffer, mimeType = 'application/pdf'): ParteArchivo {
     return { inline_data: { mime_type: mimeType, data: buffer.toString('base64') } };
   }
 }

@@ -1,10 +1,13 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ApiError } from '../lib/http'
 import { iaService } from '../services'
+import type { DocumentoConsultable } from '../services/ia.service'
 
 interface Mensaje {
   autor: 'evaluador' | 'ia'
   texto: string
+  /** Documento sobre el que se preguntó; se muestra para no perder el contexto. */
+  documento?: string
 }
 
 /**
@@ -19,18 +22,41 @@ export default function ConsultaIa({ expedienteId }: { expedienteId: number }) {
   const [pregunta, setPregunta] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState('')
+  const [documentos, setDocumentos] = useState<DocumentoConsultable[]>([])
+  const [documentoId, setDocumentoId] = useState<number | null>(null)
   const finRef = useRef<HTMLDivElement>(null)
+
+  // El primero de la lista es el proyecto de investigación (el backend lo pone
+  // adelante), que es sobre lo que se pregunta casi siempre.
+  useEffect(() => {
+    let vigente = true
+    iaService
+      .documentosConsultables(expedienteId)
+      .then(docs => {
+        if (!vigente) return
+        setDocumentos(docs)
+        setDocumentoId(docs[0]?.id ?? null)
+      })
+      // Si la lista falla, el chat sigue sirviendo: sin documento elegido el
+      // backend usa el proyecto, igual que antes de que existiera el selector.
+      .catch(() => undefined)
+    return () => {
+      vigente = false
+    }
+  }, [expedienteId])
+
+  const seleccionado = documentos.find(d => d.id === documentoId)
 
   async function preguntar() {
     const texto = pregunta.trim()
     if (texto.length < 3 || enviando) return
 
-    setMensajes(prev => [...prev, { autor: 'evaluador', texto }])
+    setMensajes(prev => [...prev, { autor: 'evaluador', texto, documento: seleccionado?.label }])
     setPregunta('')
     setEnviando(true)
     setError('')
     try {
-      const r = await iaService.consultarExpediente(expedienteId, texto)
+      const r = await iaService.consultarExpediente(expedienteId, texto, documentoId ?? undefined)
       setMensajes(prev => [...prev, { autor: 'ia', texto: r.respuesta }])
     } catch (e) {
       // El texto de la pregunta ya se consumió; el error va aparte para que el
@@ -51,9 +77,28 @@ export default function ConsultaIa({ expedienteId }: { expedienteId: number }) {
 
       {mensajes.length === 0 && !enviando && (
         <p className="small muted" style={{ margin: 0, lineHeight: 1.55 }}>
-          Pregunta sobre el contenido del proyecto y te responde citando la sección. Si algo no
-          está en el expediente, te lo dirá.
+          Elige un documento del expediente y pregunta sobre su contenido: te responde citando la
+          sección. Si algo no está en ese documento, te lo dirá.
         </p>
+      )}
+
+      {documentos.length > 0 && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="small muted" style={{ flex: 'none' }}>Documento</span>
+          <select
+            className="input"
+            // Igual que el campo de texto: sin minWidth:0 el select conserva su
+            // ancho intrínseco (el de la opción más larga) y desborda la fila.
+            style={{ flex: 1, minWidth: 0, fontSize: 12.5, padding: '6px 8px' }}
+            value={documentoId ?? ''}
+            disabled={enviando}
+            onChange={e => setDocumentoId(Number(e.target.value))}
+          >
+            {documentos.map(d => (
+              <option key={d.id} value={d.id}>{d.label}</option>
+            ))}
+          </select>
+        </label>
       )}
 
       {mensajes.length > 0 && (
@@ -78,6 +123,11 @@ export default function ConsultaIa({ expedienteId }: { expedienteId: number }) {
                     }
               }
             >
+              {/* Solo en las preguntas y solo si hay de dónde elegir: con un
+                  único documento la etiqueta sería ruido en cada burbuja. */}
+              {m.autor === 'evaluador' && m.documento && documentos.length > 1 && (
+                <div style={{ fontSize: 10.5, opacity: 0.85, marginBottom: 3 }}>{m.documento}</div>
+              )}
               {m.texto}
             </div>
           ))}

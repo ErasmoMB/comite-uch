@@ -5,20 +5,24 @@
 //
 // El historial NO se persiste a propósito: es una herramienta de consulta
 // mientras el evaluador revisa, no un registro del expediente.
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocalSearchParams } from 'expo-router'
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { ErrorText, Loading } from '../../../src/components/ui'
+import SelectField from '../../../src/components/SelectField'
 import TopBar from '../../../src/components/TopBar'
 import { ApiError } from '../../../src/lib/http'
 import { colors } from '../../../src/lib/theme'
 import { iaService } from '../../../src/services'
+import type { DocumentoConsultable } from '../../../src/services/ia.service'
 
 const MORADO = '#6941c6'
 
 interface Mensaje {
   autor: 'evaluador' | 'ia'
   texto: string
+  /** Documento sobre el que se preguntó; se muestra para no perder el contexto. */
+  documento?: string
 }
 
 export default function ConsultarExpediente() {
@@ -29,18 +33,41 @@ export default function ConsultarExpediente() {
   const [pregunta, setPregunta] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState('')
+  const [documentos, setDocumentos] = useState<DocumentoConsultable[]>([])
+  const [documentoId, setDocumentoId] = useState<number | null>(null)
   const scrollRef = useRef<ScrollView>(null)
+
+  // El primero de la lista es el proyecto de investigación (el backend lo pone
+  // adelante), que es sobre lo que se pregunta casi siempre.
+  useEffect(() => {
+    let vigente = true
+    iaService
+      .documentosConsultables(expedienteId)
+      .then(docs => {
+        if (!vigente) return
+        setDocumentos(docs)
+        setDocumentoId(docs[0]?.id ?? null)
+      })
+      // Si la lista falla, el chat sigue sirviendo: sin documento elegido el
+      // backend usa el proyecto, igual que antes de que existiera el selector.
+      .catch(() => undefined)
+    return () => {
+      vigente = false
+    }
+  }, [expedienteId])
+
+  const seleccionado = documentos.find(d => d.id === documentoId)
 
   async function preguntar() {
     const texto = pregunta.trim()
     if (texto.length < 3 || enviando) return
 
-    setMensajes(prev => [...prev, { autor: 'evaluador', texto }])
+    setMensajes(prev => [...prev, { autor: 'evaluador', texto, documento: seleccionado?.label }])
     setPregunta('')
     setEnviando(true)
     setError('')
     try {
-      const r = await iaService.consultarExpediente(expedienteId, texto)
+      const r = await iaService.consultarExpediente(expedienteId, texto, documentoId ?? undefined)
       setMensajes(prev => [...prev, { autor: 'ia', texto: r.respuesta }])
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudo consultar el expediente.')
@@ -57,6 +84,18 @@ export default function ConsultarExpediente() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        {documentos.length > 0 && (
+          <View style={s.selector}>
+            <SelectField
+              label="Documento"
+              titulo="Consultar sobre"
+              valor={String(documentoId ?? '')}
+              opciones={documentos.map(d => ({ valor: String(d.id), etiqueta: d.label }))}
+              onChange={v => setDocumentoId(Number(v))}
+            />
+          </View>
+        )}
+
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}
@@ -65,16 +104,22 @@ export default function ConsultarExpediente() {
         >
           {mensajes.length === 0 && !enviando && (
             <View style={s.vacio}>
-              <Text style={s.vacioT}>{'✦'} Pregunta sobre el proyecto</Text>
+              <Text style={s.vacioT}>{'✦'} Pregunta sobre un documento</Text>
               <Text style={s.vacioP}>
-                Responde citando la sección del documento. Si algo no está en el expediente, te lo
-                dirá en vez de inventarlo.
+                Elige arriba el documento del expediente y pregunta sobre su contenido: responde
+                citando la sección. Si algo no está en ese documento, te lo dirá en vez de
+                inventarlo.
               </Text>
             </View>
           )}
 
           {mensajes.map((m, i) => (
             <View key={i} style={m.autor === 'evaluador' ? s.msgUser : s.msgIa}>
+              {/* Solo en las preguntas y solo si hay de dónde elegir: con un
+                  único documento la etiqueta sería ruido en cada burbuja. */}
+              {m.autor === 'evaluador' && !!m.documento && documentos.length > 1 && (
+                <Text style={s.msgDoc}>{m.documento}</Text>
+              )}
               <Text style={m.autor === 'evaluador' ? s.msgUserT : s.msgIaT}>{m.texto}</Text>
             </View>
           ))}
@@ -109,6 +154,13 @@ export default function ConsultarExpediente() {
 }
 
 const s = StyleSheet.create({
+  selector: {
+    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1, borderBottomColor: colors.lineSoft,
+  },
+  msgDoc: { color: '#dbeafe', fontSize: 10.5, marginBottom: 3 },
+
   vacio: {
     backgroundColor: '#f3edff', borderWidth: 1, borderColor: '#e4d6ff',
     borderRadius: 12, padding: 14, gap: 5,

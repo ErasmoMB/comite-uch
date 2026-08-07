@@ -33,12 +33,27 @@ export async function sugerirRubrica(
   )
 }
 
+export interface DocumentoConsultable {
+  id: number
+  tipoDocumento: string
+  label: string
+  nombreArchivo: string
+}
+
+/** Documentos del expediente sobre los que el asistente puede responder. */
+export async function documentosConsultables(
+  expedienteId: number,
+): Promise<DocumentoConsultable[]> {
+  return request<DocumentoConsultable[]>(`/ia/expediente/${expedienteId}/documentos`)
+}
+
 export async function consultarExpediente(
   expedienteId: number,
   pregunta: string,
-): Promise<{ respuesta: string; modelo: string }> {
-  return request<{ respuesta: string; modelo: string }>(
+  documentoId?: number,
+): Promise<{ respuesta: string; modelo: string; documento: string }> {
+  return request<{ respuesta: string; modelo: string; documento: string }>(
     `/ia/expediente/${expedienteId}/consultar`,
-    { method: 'POST', body: { pregunta } },
+    { method: 'POST', body: { pregunta, ...(documentoId ? { documentoId } : {}) } },
   )
 }
