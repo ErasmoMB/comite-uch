@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Badge, Button, Card, ErrorText, Field, Input, Loading, Screen } from '../../src/components/ui'
 import Avatar from '../../src/components/Avatar'
+import { PuntoEstado } from '../../src/components/EstadoServidor'
 import { colors } from '../../src/lib/theme'
 import { ApiError } from '../../src/lib/http'
 import { filtrarUsuarios, type FiltroEstadoUsuario } from '../../src/lib/usuariosFilter'
@@ -210,6 +211,7 @@ export default function UsuariosAdmin() {
           <Text style={s.headerKicker}>Administración</Text>
           <Text style={s.headerTitle}>Usuarios internos</Text>
         </View>
+        <PuntoEstado />
         {!mostrarForm && (
           <Pressable onPress={() => { setMostrarForm(true); setFormError('') }} style={s.nuevoBtn}>
             <Text style={s.nuevoBtnText}>+ Crear</Text>

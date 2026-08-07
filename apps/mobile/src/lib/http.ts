@@ -23,6 +23,38 @@ export class ApiError extends Error {
   }
 }
 
+// `status: 0` = nunca hubo respuesta del servidor (sin red, servidor apagado o
+// timeout), a diferencia de un error HTTP real devuelto por el backend.
+export const SIN_RESPUESTA = 0
+
+export function esSinRespuesta(e: unknown): boolean {
+  return e instanceof ApiError && e.status === SIN_RESPUESTA
+}
+
+const MENSAJE_SIN_RESPUESTA =
+  'Servidor inactivo: no respondió a tiempo. Si acaba de encenderse puede tardar hasta un minuto; espera un momento y vuelve a intentarlo.'
+
+// El plan free de Render apaga el servicio tras ~15 min sin tráfico y la
+// petición que lo despierta tarda ~40s. Se da margen suficiente para que esa
+// primera petición llegue a completarse en vez de fallar de inmediato.
+const TIMEOUT_MS = 75_000
+
+// Envuelve fetch con timeout y traduce cualquier fallo de red a un ApiError
+// con mensaje entendible. Sin esto, una caída del servidor llegaba a las
+// pantallas como un TypeError crudo ("Network request failed") y todas
+// mostraban su texto genérico, que no le dice nada al usuario.
+async function fetchConTimeout(url: string, init: RequestInit): Promise<Response> {
+  const abort = new AbortController()
+  const cancelar = setTimeout(() => abort.abort(), TIMEOUT_MS)
+  try {
+    return await fetch(url, { ...init, signal: abort.signal })
+  } catch {
+    throw new ApiError(SIN_RESPUESTA, MENSAJE_SIN_RESPUESTA)
+  } finally {
+    clearTimeout(cancelar)
+  }
+}
+
 let onUnauthorized: (() => void) | null = null
 export function setUnauthorizedHandler(fn: () => void) {
   onUnauthorized = fn
@@ -71,7 +103,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     if (token) headers['Authorization'] = `Bearer ${token}`
   }
 
-  const res = await fetch(buildUrl(path, query), {
+  const res = await fetchConTimeout(buildUrl(path, query), {
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -103,7 +135,7 @@ export async function uploadDocumento<T>(
   // RN acepta este shape para multipart; TS no lo tipa, de ahí el cast.
   formData.append('file', { uri: file.uri, name: file.name, type: file.type } as unknown as Blob)
   for (const [k, v] of Object.entries(fields)) formData.append(k, v)
-  const res = await fetch(buildUrl(path), { method: 'POST', headers, body: formData })
+  const res = await fetchConTimeout(buildUrl(path), { method: 'POST', headers, body: formData })
   if (res.status === 401) {
     await clearToken()
     onUnauthorized?.()

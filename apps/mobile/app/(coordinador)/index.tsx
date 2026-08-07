@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Badge, Card, ErrorText, Input, Loading, Screen, StatusBadge } from '../../src/components/ui'
 import Avatar from '../../src/components/Avatar'
+import { PuntoEstado } from '../../src/components/EstadoServidor'
 import DateField, { parseFechaISO } from '../../src/components/DateField'
 import { colors } from '../../src/lib/theme'
 import { formatearFecha } from '../../src/lib/dates'
@@ -90,9 +91,12 @@ export default function DashboardCoordinador() {
           <Text style={s.headerKicker}>Panel de coordinación</Text>
           <Text numberOfLines={1} style={s.headerTitle}>{usuario?.nombres} {usuario?.apellidos}</Text>
         </View>
-        <Pressable onPress={() => router.push('/(coordinador)/perfil')}>
-          <Avatar nombres={usuario?.nombres} apellidos={usuario?.apellidos} size={40} />
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <PuntoEstado />
+          <Pressable onPress={() => router.push('/(coordinador)/perfil')}>
+            <Avatar nombres={usuario?.nombres} apellidos={usuario?.apellidos} size={40} />
+          </Pressable>
+        </View>
       </View>
 
       <Screen>

@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Card, ErrorText, Input, Loading, Screen, StatusBadge } from '../../src/components/ui'
 import Avatar from '../../src/components/Avatar'
+import { PuntoEstado } from '../../src/components/EstadoServidor'
 import DateField, { parseFechaISO } from '../../src/components/DateField'
 import { colors } from '../../src/lib/theme'
 import { formatearFecha } from '../../src/lib/dates'
@@ -64,9 +65,12 @@ export default function Bandeja() {
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <View style={[s.header, { paddingTop: insets.top + 12 }]}>
         <Text style={s.headerTitle}>Bandeja de expedientes</Text>
-        <Pressable onPress={() => router.push('/(secretaria)/perfil')}>
-          <Avatar nombres={usuario?.nombres} apellidos={usuario?.apellidos} size={40} />
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <PuntoEstado />
+          <Pressable onPress={() => router.push('/(secretaria)/perfil')}>
+            <Avatar nombres={usuario?.nombres} apellidos={usuario?.apellidos} size={40} />
+          </Pressable>
+        </View>
       </View>
 
       <Screen>

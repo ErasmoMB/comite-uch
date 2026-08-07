@@ -5,20 +5,45 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Card, Loading, ErrorText, StatusBadge, Screen } from '../../src/components/ui'
 import Avatar from '../../src/components/Avatar'
+import { PuntoEstado } from '../../src/components/EstadoServidor'
 import { colors } from '../../src/lib/theme'
 import type { Proyecto } from '../../src/data/types'
 import { ApiError } from '../../src/lib/http'
 import { toDomainProyecto } from '../../src/lib/mappers'
-import { expedientesService } from '../../src/services'
+import { configService, expedientesService } from '../../src/services'
 import { useApp } from '../../src/state/AppContext'
 
-const CIERRE = new Date('2026-07-08T23:59:59')
+// Cuenta regresiva hasta la fecha límite de envío que configura el
+// administrador (`fecha_limite_envio`). Devuelve null mientras carga o si no
+// hay fecha configurada, para que el banner no se muestre en cero.
 function useCuentaRegresiva() {
-  const [restante, setRestante] = useState(CIERRE.getTime() - Date.now())
+  const [cierre, setCierre] = useState<number | null>(null)
+  const [restante, setRestante] = useState(0)
+
   useEffect(() => {
-    const t = setInterval(() => setRestante(CIERRE.getTime() - Date.now()), 1000)
-    return () => clearInterval(t)
+    let vivo = true
+    configService
+      .getFechaLimite()
+      .then(dto => {
+        if (vivo && dto.fechaLimite) setCierre(new Date(dto.fechaLimite).getTime())
+      })
+      .catch(() => {
+        /* sin fecha límite configurada: el banner no se muestra */
+      })
+    return () => {
+      vivo = false
+    }
   }, [])
+
+  useEffect(() => {
+    if (cierre === null) return
+    const actualizar = () => setRestante(cierre - Date.now())
+    actualizar()
+    const t = setInterval(actualizar, 1000)
+    return () => clearInterval(t)
+  }, [cierre])
+
+  if (cierre === null) return null
   const s = Math.max(0, Math.floor(restante / 1000))
   return { dias: Math.floor(s / 86400), horas: Math.floor((s % 86400) / 3600), min: Math.floor((s % 3600) / 60), seg: s % 60 }
 }
@@ -69,20 +94,25 @@ export default function Dashboard() {
           <Text style={{ fontSize: 13, color: colors.slate500 }}>Buen día,</Text>
           <Text style={{ fontSize: 17, fontWeight: '700' }}>{usuario?.nombres} {usuario?.apellidos}</Text>
         </View>
-        <Pressable onPress={() => router.push('/(app)/perfil')}><Avatar nombres={usuario?.nombres} apellidos={usuario?.apellidos} /></Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <PuntoEstado />
+          <Pressable onPress={() => router.push('/(app)/perfil')}><Avatar nombres={usuario?.nombres} apellidos={usuario?.apellidos} /></Pressable>
+        </View>
       </View>
       <Screen>
-        <View style={s.banner}>
-          <Text style={s.bannerTitle}>Cierre de envíos de proyectos</Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {[[cr.dias,'DÍAS'],[cr.horas,'HRS'],[cr.min,'MIN'],[cr.seg,'SEG']].map(([n,l]) => (
-              <View key={l as string} style={s.bannerBox}>
-                <Text style={s.bannerNum}>{String(n).padStart(2,'0')}</Text>
-                <Text style={s.bannerLabel}>{l}</Text>
-              </View>
-            ))}
+        {cr && (
+          <View style={s.banner}>
+            <Text style={s.bannerTitle}>Cierre de envíos de proyectos</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {[[cr.dias,'DÍAS'],[cr.horas,'HRS'],[cr.min,'MIN'],[cr.seg,'SEG']].map(([n,l]) => (
+                <View key={l as string} style={s.bannerBox}>
+                  <Text style={s.bannerNum}>{String(n).padStart(2,'0')}</Text>
+                  <Text style={s.bannerLabel}>{l}</Text>
+                </View>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
         <View style={{ flexDirection: 'row', gap: 9 }}>
           {stats.map(st => (
             <Card key={st.label} style={{ flex: 1, alignItems: 'center', paddingVertical: 11 }}>

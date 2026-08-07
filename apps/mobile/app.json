@@ -9,6 +9,7 @@
     "newArchEnabled": true,
     "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#08204a"
     },
@@ -26,6 +27,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b0f68d95-7516-4f71-b110-46322b03b2c7"
+      }
+    },
+    "owner": "edumb"
   }
 }

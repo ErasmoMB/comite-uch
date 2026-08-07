@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { colors } from '../lib/theme'
+import { PuntoEstado } from './EstadoServidor'
 
 export default function TopBar({ titulo, atras = true, right }: { titulo: string; atras?: boolean; right?: ReactNode }) {
   const router = useRouter()
@@ -17,6 +18,9 @@ export default function TopBar({ titulo, atras = true, right }: { titulo: string
       )}
       <Text style={s.title} numberOfLines={1}>{titulo}</Text>
       {right}
+      {/* Estado del servidor siempre visible: el usuario sabe en todo momento
+          si la app está hablando con el backend o no. */}
+      <PuntoEstado conEtiqueta={false} />
     </View>
   )
 }
