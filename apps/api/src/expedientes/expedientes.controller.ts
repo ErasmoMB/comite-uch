@@ -196,7 +196,7 @@ export class ExpedientesController {
   // campo de archivo "file" + campos opcionales tipoDocumento/esObligatorio.
   // `FileInterceptor` sin opciones usa multer en modo memoria (sin `dest` ni
   // `storage` -> `MemoryStorage`), igual que Python que carga todo el
-  // contenido en memoria (`await file.read()`) antes de subirlo a Supabase.
+  // contenido en memoria (`await file.read()`) antes de subirlo al bucket.
   @Post(':id/documentos')
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FileInterceptor('file'))

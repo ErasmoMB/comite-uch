@@ -4,7 +4,8 @@ import DesktopSidebar from '../../components/DesktopSidebar'
 import DesktopTopbar from '../../components/DesktopTopbar'
 import DocumentPreviewModal, { type DocumentPreviewState } from '../../components/DocumentPreviewModal'
 import { TopBar } from '../../components/shared'
-import { ApiError, getToken } from '../../lib/http'
+import { descargarArchivo } from '../../lib/descargas'
+import { ApiError } from '../../lib/http'
 import { evaluacionService, expedientesService } from '../../services'
 import { useConfirm } from '../../state/ConfirmContext'
 import type { DocumentoDto, ExpedienteDto, RubricaDto } from '../../types/api'
@@ -13,27 +14,6 @@ import type { EvaluacionDto } from '../../types/api'
 interface CriterioEstado {
   puntaje: string
   observacion: string
-}
-
-// Descarga autenticada vía blob: un <a href> directo al backend NO llevaría
-// el header Authorization (el navegador no lo agrega en navegación simple),
-// así que se resuelve con fetch + Authorization Bearer + Blob URL temporal,
-// igual que expedientesService.descargarDocumento.
-async function descargarArchivo(url: string, nombreArchivo: string) {
-  const token = getToken()
-  const headers: Record<string, string> = {}
-  if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch(url, { headers })
-  if (!res.ok) throw new ApiError(res.status, 'No se pudo descargar el archivo.')
-  const blob = await res.blob()
-  const objectUrl = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = objectUrl
-  a.download = nombreArchivo
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  URL.revokeObjectURL(objectUrl)
 }
 
 export default function Evaluacion() {

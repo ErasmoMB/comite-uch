@@ -27,6 +27,10 @@ type CurrentUser = { id: number; email: string; rol: string };
 
 const ROLES_COORDINACION = ['administrador', 'coordinador'];
 
+// Roles internos del comité: ven todos los expedientes (mismo criterio que
+// `ExpedientesService.ROLES_VEN_TODO`).
+const ROLES_VEN_TODO = ['administrador', 'coordinador', 'secretaria'];
+
 // Forma completa de una evaluación con relaciones, tal como se necesita para
 // construir la respuesta (equivalente a los `joinedload` de routes.py).
 const INCLUDE_COMPLETO = {
@@ -430,11 +434,10 @@ export class EvaluacionService {
   }
 
   // Descarga los PDFs generados (rúbrica y/o dictamen) como adjuntos para el
-  // email. `rubricaPdfPath` siempre es una key propia del bucket (hay que
-  // traerla con `StorageService.getObjectBuffer`); `dictamenPdfPath` es un
-  // presigned URL de Supabase Storage (`PdfService.generarDictamen`), así que
-  // se descarga con un GET normal (mismo criterio de detección "http" que
-  // `resolverDescarga`).
+  // email. Hoy tanto `rubricaPdfPath` como `dictamenPdfPath` son keys propias
+  // del bucket, y se traen con `StorageService.getObjectBuffer`. Se conserva la
+  // rama "http" porque registros antiguos podrían guardar todavía un presigned
+  // URL completo (así se persistía el dictamen antes; ver PdfService.generarDictamen).
   private async recolectarAdjuntosPdf(ev: EvaluacionCompleta): Promise<EmailAttachment[]> {
     const adjuntos: EmailAttachment[] = [];
 
@@ -543,13 +546,10 @@ export class EvaluacionService {
   }
 
   // GET /evaluacion/{id}/descargar-rubrica y /descargar-dictamen
-  // (routes.py:261-314). Ambos comparten la misma lógica: si el path
-  // guardado ya es una URL (empieza con "http" -- caso de
-  // `PdfService.generarDictamen`, que devuelve un presigned URL de Supabase
-  // Storage), se debe REDIRIGIR a esa URL; si es una key propia del bucket
-  // (caso de `PdfService.generarEvaluacionCompleta`), hay que traer el
-  // objeto y servirlo. Mismo fix aplicado hoy al Python real
-  // (routes.py:275-276 / 303-304).
+  // (routes.py:261-314). Ambos comparten la misma lógica: hoy los dos paths
+  // son keys propias del bucket, así que se trae el objeto y se sirve. Se
+  // mantiene la rama "http" (REDIRIGIR) solo por compatibilidad con registros
+  // antiguos que hayan quedado con un presigned URL completo guardado.
   private async resolverDescarga(
     path: string | null,
     mensajeNoGenerado: string,
@@ -570,8 +570,22 @@ export class EvaluacionService {
     return { buffer, contentType: 'application/pdf', nombreArchivo };
   }
 
-  async descargarRubrica(id: number) {
+  // Estos PDFs llevan el nombre del autor, el título del proyecto y el juicio
+  // ético del comité, así que NO pueden quedar accesibles a cualquier usuario
+  // autenticado (antes bastaba con iterar ids para leer la evaluación de otro
+  // estudiante). Pueden descargarlos: el evaluador asignado, el dueño del
+  // expediente -- que es justamente quien necesita su propio dictamen -- y los
+  // roles internos, que de todos modos ya ven todos los expedientes.
+  private assertAccesoDescarga(ev: EvaluacionCompleta, user: CurrentUser) {
+    if (ROLES_VEN_TODO.includes(user.rol)) return;
+    if (ev.evaluadorId === user.id) return;
+    if (ev.expediente?.investigadorId === user.id) return;
+    throw new ForbiddenException('No tienes acceso a esta evaluación');
+  }
+
+  async descargarRubrica(id: number, user: CurrentUser) {
     const ev = await this.getOrThrow(id);
+    this.assertAccesoDescarga(ev, user);
     return this.resolverDescarga(
       ev.rubricaPdfPath,
       'La rúbrica PDF aún no ha sido generada. Debes enviar la evaluación primero.',
@@ -579,8 +593,9 @@ export class EvaluacionService {
     );
   }
 
-  async descargarDictamen(id: number) {
+  async descargarDictamen(id: number, user: CurrentUser) {
     const ev = await this.getOrThrow(id);
+    this.assertAccesoDescarga(ev, user);
     return this.resolverDescarga(
       ev.dictamenPdfPath,
       'El dictamen PDF aún no ha sido generado. Solo se genera para evaluaciones aprobadas.',

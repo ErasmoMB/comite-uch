@@ -30,3 +30,23 @@ export async function abrirDocumento(url: string, nombreArchivo: string): Promis
 
   await Sharing.shareAsync(uri)
 }
+
+// El dictamen SOLO se genera cuando el proyecto queda aprobado (con o sin
+// observaciones); la rúbrica SOLO cuando hay algo que corregir. Ver
+// EvaluacionService.generarPdfsPostEnvio en el backend:
+//   aprobado               -> dictamen
+//   aprobado_observaciones -> rúbrica + dictamen
+//   no_aprobado            -> rúbrica
+export function hayDictamen(resultado: string | null | undefined): boolean {
+  return resultado === 'aprobado' || resultado === 'aprobado_observaciones'
+}
+
+export function hayRubrica(resultado: string | null | undefined): boolean {
+  return resultado === 'aprobado_observaciones' || resultado === 'no_aprobado'
+}
+
+export const RESULTADO_LABEL: Record<string, string> = {
+  aprobado: 'Aprobado',
+  aprobado_observaciones: 'Aprobado con observaciones',
+  no_aprobado: 'No aprobado',
+}

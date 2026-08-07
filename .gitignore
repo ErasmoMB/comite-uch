@@ -8,7 +8,7 @@ dist/
 # Turborepo
 .turbo/
 
-# Variables de entorno (contienen credenciales reales de Supabase/Resend)
+# Variables de entorno (contienen credenciales reales de Neon/R2/Resend)
 .env
 .env.*
 !.env.example

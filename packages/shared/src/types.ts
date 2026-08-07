@@ -1,3 +1,5 @@
+import type { ResultadoEvaluacion } from './constants.js'
+
 export type RolBackend =
   | 'administrador'
   | 'coordinador'
@@ -71,6 +73,13 @@ export interface ExpedienteDto {
   updatedAt: string | null
   autores?: AutorExpedienteDto[]
   investigador?: UserDto
+  // Resultado de la última evaluación completada del expediente. `...Url` son
+  // en realidad KEYS del bucket (no enlaces navegables): para descargar hay
+  // que usar `/evaluacion/{evaluacionId}/descargar-rubrica|dictamen`.
+  evaluacionId?: number | null
+  evaluacionResultado?: ResultadoEvaluacion | null
+  evaluacionRubricaUrl?: string | null
+  evaluacionDictamenUrl?: string | null
 }
 
 export interface DocumentoDto {

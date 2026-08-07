@@ -11,8 +11,8 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 /**
  * Cliente de almacenamiento de objetos (API S3-compatible).
  *
- * Apunta a Cloudflare R2 (migrado desde Supabase Storage). Cualquier
- * proveedor S3-compatible funciona con solo cambiar las variables R2_*.
+ * Apunta a Cloudflare R2. Cualquier proveedor S3-compatible funciona con solo
+ * cambiar las variables R2_*.
  */
 @Injectable()
 export class StorageService {
@@ -46,9 +46,9 @@ export class StorageService {
     return process.env.R2_BUCKET ?? 'comite-etica-documentos';
   }
 
-  // Documentos guardados antes de que S3/Supabase Storage estuviera
-  // configurado (ver docs de migración) quedaron con `rutaArchivo` en formato
-  // de ruta local de Windows (`uploads\24\archivo.pdf`). Una key S3 solo
+  // Documentos guardados en la época en que las subidas caían al disco local
+  // (antes de tener almacenamiento de objetos) quedaron con `rutaArchivo` en
+  // formato de ruta de Windows (`uploads\24\archivo.pdf`). Una key S3 solo
   // acepta '/' como separador -- con '\' la API rechaza el request entero con
   // `InvalidKey` antes de siquiera buscar el objeto. Normalizar aquí es el
   // único punto de entrada a S3, así que cubre todos los llamadores.

@@ -92,15 +92,15 @@ export class EvaluacionController {
   // para poder tanto redirigir (302, si el path guardado ya es una URL) como
   // servir el buffer crudo (si es una key propia del bucket).
   @Get(':id/descargar-rubrica')
-  async descargarRubrica(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
-    const resultado = await this.evaluacionService.descargarRubrica(id);
+  async descargarRubrica(@Param('id', ParseIntPipe) id: number, @Req() req: any, @Res() res: Response) {
+    const resultado = await this.evaluacionService.descargarRubrica(id, req.user);
     this.responderDescarga(res, resultado);
   }
 
   // GET /evaluacion/{id}/descargar-dictamen (routes.py:289-314).
   @Get(':id/descargar-dictamen')
-  async descargarDictamen(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
-    const resultado = await this.evaluacionService.descargarDictamen(id);
+  async descargarDictamen(@Param('id', ParseIntPipe) id: number, @Req() req: any, @Res() res: Response) {
+    const resultado = await this.evaluacionService.descargarDictamen(id, req.user);
     this.responderDescarga(res, resultado);
   }
 

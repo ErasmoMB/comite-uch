@@ -1,7 +1,7 @@
 # @comite/mobile
 
 App Expo (React Native) del Comité de Ética UCH. Consume la misma API (`apps/api`,
-NestJS + Supabase) que `apps/web`, replicando sus flujos para un cliente móvil
+NestJS + Neon + R2) que `apps/web`, replicando sus flujos para un cliente móvil
 Android. Cubre los 7 roles del sistema mediante 5 grupos de rutas separados por
 rol: `(app)` (solicitante), `(secretaria)`, `(coordinador)`, `(evaluador)` y
 `(administrador)`.
@@ -23,7 +23,7 @@ npm install
 # 2) Compilar el paquete compartido de tipos/DTOs (requerido antes de levantar la API o mobile)
 npm run build -w @comite/shared
 
-# 3) Terminal 1: levantar la API real (NestJS + Supabase)
+# 3) Terminal 1: levantar la API real (NestJS + Neon + R2)
 npm run dev -w @comite/api
 
 # 4) Terminal 2: levantar Expo

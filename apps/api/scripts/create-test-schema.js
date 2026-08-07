@@ -1,7 +1,7 @@
 // Script auxiliar de una sola vez: crea el schema Postgres "test" dentro de
-// la MISMA base/instancia Supabase que usa produccion. Es una operacion
+// la MISMA base/instancia Neon que usa produccion. Es una operacion
 // aditiva (CREATE SCHEMA IF NOT EXISTS) que NO toca ni modifica el schema
-// "public" (donde viven las 11 tablas reales con datos de produccion).
+// "public" (donde viven las 12 tablas reales con datos de produccion).
 // Se conecta usando el DATABASE_URL de `.env` (produccion) precisamente
 // porque necesita crear un schema nuevo en esa misma base; no borra ni
 // altera ninguna tabla existente.

@@ -1,5 +1,4 @@
-// Esquema Prisma para la base de datos Supabase Postgres existente (ya
-// poblada y en uso por el backend Python/FastAPI en `comite/backend`).
+// Esquema Prisma de la base de datos del Comité (Neon Postgres 17).
 //
 // IMPORTANTE: los nombres/tipos/nullability de cada columna fueron
 // verificados con `npx prisma db pull --print` (introspección de solo

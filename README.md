@@ -24,8 +24,9 @@ de negocio y conectado a la misma base de datos real.
 - PDFKit para generar los PDF de rúbrica y dictamen de cada evaluación
 
 **Infraestructura / servicios externos**
-- **Supabase** — base de datos PostgreSQL, y también Supabase Storage
-  (compatible con S3) para los documentos que suben los investigadores
+- **Neon** — base de datos PostgreSQL 17
+- **Cloudflare R2** — almacenamiento (compatible con S3) de los documentos
+  que suben los investigadores y de los PDF generados
 - **Resend** — envío real de correos transaccionales (resultado de
   evaluación, recuperación de contraseña)
 
@@ -86,7 +87,7 @@ Todas las cuentas demo usan la misma contraseña: `password`.
 | Evaluador | evaluador@uch.edu.pe |
 | Administrador | admin@uch.edu.pe |
 
-> Son cuentas de prueba en la misma base de datos real (Supabase). No son
+> Son cuentas de prueba en la misma base de datos real (Neon). No son
 > credenciales para producción — antes de que usuarios reales usen el
 > sistema, hay que crear cuentas propias y considerar desactivar o eliminar
 > estas.
@@ -94,7 +95,7 @@ Todas las cuentas demo usan la misma contraseña: `password`.
 ## Cómo correrlo en local
 
 Requiere Node.js y las variables de entorno reales (`server/.env`,
-`client/.env` — no se versionan, contienen credenciales de Supabase/Resend).
+`client/.env` — no se versionan, contienen credenciales de Neon/R2/Resend).
 
 ```bash
 # Backend (puerto 8002)

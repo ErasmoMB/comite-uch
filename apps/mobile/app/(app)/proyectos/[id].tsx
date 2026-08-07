@@ -7,8 +7,9 @@ import TopBar from '../../../src/components/TopBar'
 import { colors } from '../../../src/lib/theme'
 import { formatearFechaHora } from '../../../src/lib/dates'
 import { ApiError } from '../../../src/lib/http'
+import { abrirDocumento, hayDictamen, hayRubrica, RESULTADO_LABEL } from '../../../src/lib/documentDownload'
 import { ESTADO_LABEL, toDomainProyecto } from '../../../src/lib/mappers'
-import { expedientesService } from '../../../src/services'
+import { evaluacionService, expedientesService } from '../../../src/services'
 import type { DocumentoDto, EstadoExpediente, ExpedienteDto, HistorialDto, RequisitosDto } from '../../../src/types/api'
 
 const ESTADOS_CAMBIO_TITULO: EstadoExpediente[] = ['aprobado', 'aprobado_observaciones']
@@ -26,6 +27,28 @@ export default function DetalleProyecto() {
   const [noEncontrado, setNoEncontrado] = useState(false)
   const [accionError, setAccionError] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [descargando, setDescargando] = useState<'rubrica' | 'dictamen' | null>(null)
+  const [descargaError, setDescargaError] = useState('')
+
+  async function onDescargarEvaluacion(tipo: 'rubrica' | 'dictamen', evaluacionId: number) {
+    try {
+      setDescargando(tipo)
+      setDescargaError('')
+      const url =
+        tipo === 'rubrica'
+          ? evaluacionService.urlDescargarRubrica(evaluacionId)
+          : evaluacionService.urlDescargarDictamen(evaluacionId)
+      await abrirDocumento(url, `${tipo}-${expediente?.codigoUnico ?? evaluacionId}.pdf`)
+    } catch (e) {
+      setDescargaError(
+        e instanceof ApiError || e instanceof Error
+          ? e.message
+          : `No se pudo descargar ${tipo === 'rubrica' ? 'la rúbrica' : 'el dictamen'}.`,
+      )
+    } finally {
+      setDescargando(null)
+    }
+  }
 
   const cargar = useCallback(async () => {
     if (!Number.isFinite(expedienteId)) {
@@ -110,6 +133,36 @@ export default function DetalleProyecto() {
           <Text style={s.titulo}>{proyecto.titulo}</Text>
         </Card>
 
+        {!!expediente.evaluacionResultado && !!expediente.evaluacionId && (
+          <>
+            <Text style={s.seccionTitulo}>Resultado del comité</Text>
+            <Card style={{ padding: 13, gap: 10 }}>
+              <View style={{ gap: 3 }}>
+                <Text style={s.muted}>Resultado de la evaluación</Text>
+                <Text style={[s.resultado, { color: colorResultado(expediente.evaluacionResultado) }]}>
+                  {RESULTADO_LABEL[expediente.evaluacionResultado] ?? expediente.evaluacionResultado}
+                </Text>
+              </View>
+              {!!descargaError && <ErrorText>{descargaError}</ErrorText>}
+              {hayDictamen(expediente.evaluacionResultado) && (
+                <Button
+                  title={descargando === 'dictamen' ? 'Abriendo…' : 'Descargar dictamen (PDF)'}
+                  loading={descargando === 'dictamen'}
+                  onPress={() => onDescargarEvaluacion('dictamen', expediente.evaluacionId!)}
+                />
+              )}
+              {hayRubrica(expediente.evaluacionResultado) && (
+                <Button
+                  title={descargando === 'rubrica' ? 'Abriendo…' : 'Descargar rúbrica (PDF)'}
+                  variant="outline"
+                  loading={descargando === 'rubrica'}
+                  onPress={() => onDescargarEvaluacion('rubrica', expediente.evaluacionId!)}
+                />
+              )}
+            </Card>
+          </>
+        )}
+
         <Text style={s.seccionTitulo}>Checklist documental</Text>
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           {filasChecklist.map(f => (
@@ -144,6 +197,12 @@ export default function DetalleProyecto() {
       </Screen>
     </View>
   )
+}
+
+function colorResultado(resultado: string): string {
+  if (resultado === 'aprobado') return colors.success
+  if (resultado === 'no_aprobado') return colors.danger
+  return colors.warn
 }
 
 function ChecklistRow({ nombre, doc, esBorrador }: { nombre: string; doc: DocumentoDto | null; esBorrador: boolean }) {
@@ -189,6 +248,7 @@ const s = StyleSheet.create({
   codigo: { fontSize: 13, fontWeight: '600', color: colors.slate400 },
   titulo: { fontSize: 15, fontWeight: '700', lineHeight: 21, color: colors.ink },
   seccionTitulo: { fontSize: 13, fontWeight: '700', color: colors.navy },
+  resultado: { fontSize: 15, fontWeight: '700' },
   checklistVacio: { fontSize: 13, color: colors.slate500, padding: 14 },
   checklistRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.lineSoft },
   checklistLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 },

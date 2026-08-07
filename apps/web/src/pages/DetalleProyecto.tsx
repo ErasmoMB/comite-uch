@@ -5,9 +5,10 @@ import DesktopTopbar from '../components/DesktopTopbar'
 import DocumentPreviewModal, { type DocumentPreviewState } from '../components/DocumentPreviewModal'
 import { TopBar, StatusBadge } from '../components/shared'
 import { formatearFechaHora } from '../lib/dates'
+import { descargarArchivo, hayDictamen, hayRubrica, RESULTADO_LABEL } from '../lib/descargas'
 import { ApiError } from '../lib/http'
 import { ESTADO_LABEL, toDomainProyecto } from '../lib/mappers'
-import { expedientesService } from '../services'
+import { evaluacionService, expedientesService } from '../services'
 import type { DocumentoDto, EstadoExpediente, ExpedienteDto, HistorialDto, RequisitosDto } from '../types/api'
 
 const ESTADOS_CAMBIO_TITULO: EstadoExpediente[] = ['aprobado', 'aprobado_observaciones']
@@ -27,6 +28,26 @@ export default function DetalleProyecto() {
   const [enviando, setEnviando] = useState(false)
   const [subiendoTipo, setSubiendoTipo] = useState<string | null>(null)
   const [preview, setPreview] = useState<DocumentPreviewState | null>(null)
+  const [descargando, setDescargando] = useState<'rubrica' | 'dictamen' | null>(null)
+  const [descargaError, setDescargaError] = useState('')
+
+  async function handleDescargarEvaluacion(tipo: 'rubrica' | 'dictamen', evaluacionId: number) {
+    setDescargaError('')
+    setDescargando(tipo)
+    try {
+      const url =
+        tipo === 'rubrica'
+          ? evaluacionService.urlDescargarRubrica(evaluacionId)
+          : evaluacionService.urlDescargarDictamen(evaluacionId)
+      await descargarArchivo(url, `${tipo}-${expediente?.codigoUnico ?? evaluacionId}.pdf`)
+    } catch (e) {
+      setDescargaError(
+        e instanceof ApiError ? e.message : `No se pudo descargar ${tipo === 'rubrica' ? 'la rúbrica' : 'el dictamen'}.`,
+      )
+    } finally {
+      setDescargando(null)
+    }
+  }
 
   const cargar = useCallback(async () => {
     if (!Number.isFinite(expedienteId)) {
@@ -210,6 +231,56 @@ export default function DetalleProyecto() {
     )
   }
 
+  // Resultado de la evaluación del comité: es el desenlace del trámite, así
+  // que el solicitante debe poder descargar aquí sus propios PDFs. Qué archivo
+  // existe depende del resultado (ver hayDictamen/hayRubrica).
+  function ResultadoEvaluacion({ desktop = false }: { desktop?: boolean }) {
+    const resultado = expediente!.evaluacionResultado
+    const evaluacionId = expediente!.evaluacionId
+    if (!resultado || !evaluacionId) return null
+
+    const color =
+      resultado === 'aprobado' ? 'var(--success)' : resultado === 'no_aprobado' ? 'var(--danger)' : 'var(--warning)'
+
+    return (
+      <>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span className="small muted">Resultado de la evaluación</span>
+          <strong style={{ fontSize: desktop ? 15 : 14.5, color }}>
+            {RESULTADO_LABEL[resultado] ?? resultado}
+          </strong>
+        </div>
+
+        {descargaError && (
+          <p className="field-error" style={{ margin: 0 }}>
+            {descargaError}
+          </p>
+        )}
+
+        {hayDictamen(resultado) && (
+          <button
+            className={desktop ? 'd-btn-primary' : 'btn btn-primary'}
+            style={desktop ? { width: '100%' } : undefined}
+            disabled={descargando !== null}
+            onClick={() => handleDescargarEvaluacion('dictamen', evaluacionId)}
+          >
+            {descargando === 'dictamen' ? 'Descargando…' : 'Descargar dictamen (PDF)'}
+          </button>
+        )}
+        {hayRubrica(resultado) && (
+          <button
+            className={desktop ? 'd-btn-ghost' : 'btn btn-outline'}
+            style={desktop ? { width: '100%' } : undefined}
+            disabled={descargando !== null}
+            onClick={() => handleDescargarEvaluacion('rubrica', evaluacionId)}
+          >
+            {descargando === 'rubrica' ? 'Descargando…' : 'Descargar rúbrica de evaluación (PDF)'}
+          </button>
+        )}
+      </>
+    )
+  }
+
   function Acciones({ desktop = false }: { desktop?: boolean }) {
     return (
       <>
@@ -269,6 +340,15 @@ export default function DetalleProyecto() {
           </div>
           <strong style={{ fontSize: 15, lineHeight: 1.35 }}>{proyecto.titulo}</strong>
         </div>
+
+        {expediente.evaluacionResultado && expediente.evaluacionId && (
+          <>
+            <strong style={{ fontSize: 13, color: 'var(--navy)' }}>Resultado del comité</strong>
+            <div className="card" style={{ padding: '13px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <ResultadoEvaluacion />
+            </div>
+          </>
+        )}
 
         <strong style={{ fontSize: 13, color: 'var(--navy)' }}>Checklist documental</strong>
         <div className="card" style={{ overflow: 'hidden' }}>
@@ -335,6 +415,13 @@ export default function DetalleProyecto() {
               </div>
 
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
+                {expediente.evaluacionResultado && expediente.evaluacionId && (
+                  <div className="card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--navy)' }}>Resultado del comité</span>
+                    <ResultadoEvaluacion desktop />
+                  </div>
+                )}
+
                 <div className="card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--navy)' }}>Acciones</span>
                   <Acciones desktop />

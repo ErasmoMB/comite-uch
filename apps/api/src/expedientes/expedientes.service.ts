@@ -363,6 +363,11 @@ export class ExpedientesService {
       evaluacionRubricaUrl: ultimaCon(evaluacionesCompletasRubrica)?.rubricaPdfPath ?? null,
       evaluacionDictamenUrl: ultimaCon(evaluacionesCompletasDictamen)?.dictamenPdfPath ?? null,
       evaluacionResultado: ultimaCon(evaluacionesCompletasResultado)?.resultado ?? null,
+      // Id de la evaluación que produjo ese resultado. Los PDFs se descargan
+      // por `/evaluacion/{id}/descargar-rubrica|dictamen`, así que el
+      // solicitante necesita este id para poder bajar su propio dictamen
+      // (los campos ...Url de arriba son keys del bucket, no enlaces usables).
+      evaluacionId: ultimaCon(evaluacionesCompletasResultado)?.id ?? null,
       createdAt: exp.fechaCreacion,
     };
   }
@@ -988,11 +993,11 @@ export class ExpedientesService {
     try {
       buffer = await this.storage.getObjectBuffer(doc.rutaArchivo);
     } catch {
-      // Documentos subidos antes de que S3/Supabase Storage estuviera
-      // configurado (ver docs de migración) apuntan a un archivo que solo
-      // existía en disco local y nunca se subió al bucket -- el objeto
-      // simplemente no está ahí. Sin este catch, el SDK de S3 tira un error
-      // crudo que el filtro global de excepciones convierte en un 500 opaco.
+      // Documentos subidos en la época en que las subidas caían al disco local
+      // (antes de tener almacenamiento en la nube) apuntan a un archivo que
+      // nunca llegó al bucket -- el objeto simplemente no está ahí. Sin este
+      // catch, el SDK de S3 tira un error crudo que el filtro global de
+      // excepciones convierte en un 500 opaco.
       throw new NotFoundException(
         'El archivo de este documento no está disponible: fue subido antes de migrar a almacenamiento en la nube.',
       );
