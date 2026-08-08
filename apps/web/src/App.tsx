@@ -1,7 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import NotificationsSheet from './components/NotificationsSheet'
 import RutaProtegida from './components/RutaProtegida'
-import Acerca from './pages/Acerca'
 import CambiarTitulo from './pages/CambiarTitulo'
 import Consultas from './pages/Consultas'
 import Dashboard from './pages/Dashboard'
@@ -35,7 +34,6 @@ export default function App() {
         <Route path="/registro" element={<Registro />} />
         <Route path="/registro/exito" element={<RegistroExito />} />
         <Route path="/recuperar" element={<Recuperar />} />
-        <Route path="/acerca" element={<Acerca />} />
 
         {/* Investigador / solicitante */}
         <Route path="/" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><Dashboard /></RutaProtegida>} />

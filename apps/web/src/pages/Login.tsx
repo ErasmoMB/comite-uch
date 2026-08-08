@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Logo } from '../components/shared'
 import { homePathForRole } from '../data/types'
 import { ApiError } from '../lib/http'
-import { APP_NOMBRE, MOSTRAR_LOGO } from '../lib/marca'
+import { APP_NOMBRE, MOSTRAR_LOGO, URL_COMITE_UCH } from '../lib/marca'
 import { useApp } from '../state/AppContext'
 
 export default function Login() {
@@ -102,9 +102,14 @@ export default function Login() {
               </Link>
             </div>
             <div style={{ textAlign: 'center', marginTop: 14 }}>
-              <Link to="/acerca" style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--slate-500)', textDecoration: 'none' }}>
-                Acerca del Comité de Ética
-              </Link>
+              <a
+                href={URL_COMITE_UCH}
+                target="_blank"
+                rel="noreferrer"
+                style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--slate-500)', textDecoration: 'none' }}
+              >
+                Acerca del Comité de Ética ↗
+              </a>
             </div>
           </form>
         </div>
@@ -178,9 +183,14 @@ export default function Login() {
               </Link>
             </div>
             <div style={{ textAlign: 'center', marginTop: 24 }}>
-              <Link to="/acerca" style={{ fontSize: 12, fontWeight: 500, color: 'var(--slate-500)', textDecoration: 'none' }}>
-                Acerca del Comité de Ética
-              </Link>
+              <a
+                href={URL_COMITE_UCH}
+                target="_blank"
+                rel="noreferrer"
+                style={{ fontSize: 12, fontWeight: 500, color: 'var(--slate-500)', textDecoration: 'none' }}
+              >
+                Acerca del Comité de Ética ↗
+              </a>
             </div>
           </form>
         </div>

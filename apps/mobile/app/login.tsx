@@ -1,11 +1,11 @@
 // app/login.tsx
 import { useState } from 'react'
 import { Link, useRouter } from 'expo-router'
-import { ImageBackground, StyleSheet, Text, View } from 'react-native'
+import { ImageBackground, Linking, StyleSheet, Text, View } from 'react-native'
 import { Button, ErrorText, Field, Input, Logo } from '../src/components/ui'
 import { colors } from '../src/lib/theme'
 import { ApiError } from '../src/lib/http'
-import { APP_NOMBRE } from '../src/lib/marca'
+import { APP_NOMBRE, URL_COMITE_UCH } from '../src/lib/marca'
 import { useApp } from '../src/state/AppContext'
 import { homeGroupForRole } from '../src/lib/roles'
 
@@ -59,7 +59,9 @@ export default function Login() {
           <Text style={{ color: colors.line }}>·</Text>
           <Link href="/recuperar" style={s.link}>Recuperar</Link>
         </View>
-        <Link href="/acerca" style={s.acerca}>Acerca del Comité de Ética</Link>
+        <Text style={s.acerca} onPress={() => Linking.openURL(URL_COMITE_UCH)}>
+          Acerca del Comité de Ética ↗
+        </Text>
       </View>
     </ImageBackground>
   )
