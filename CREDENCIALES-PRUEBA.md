@@ -3,6 +3,21 @@
 > Datos de la base **demo** (Neon). El proyecto es una propuesta, no hay datos reales:
 > se puede crear, editar y borrar sin cuidado.
 
+## Dónde probar
+
+- **Web (producción):** https://comite-uch.onrender.com — el plan es gratuito, así que
+  el servicio se duerme por inactividad y la primera carga puede tardar ~40 s.
+- **App Android — enlace para instalar el APK (última versión):**
+  https://expo.dev/accounts/edumb/projects/comite-etica-uch/builds/3ce03a65-e701-4a8e-95b6-935a54bd50ed
+
+  Ábrelo desde el celular y descarga el APK (o escanea el QR de esa página). Android
+  pedirá permitir la instalación de orígenes desconocidos. La app apunta a la web de
+  producción de arriba, no a tu PC.
+
+  Cada compilación genera un enlace nuevo; el listado completo, siempre con la última
+  versión arriba, está en
+  https://expo.dev/accounts/edumb/projects/comite-etica-uch/builds
+
 ## Cuentas
 
 **La contraseña de todas es `password`.**
