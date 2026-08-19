@@ -181,6 +181,16 @@ export default function DetalleProyecto() {
           {esBorrador && (
             <Button title={enviando ? 'Enviando…' : 'Enviar proyecto'} onPress={handleEnviar} loading={enviando} />
           )}
+          {/* Sin esta salida, un borrador con datos incompletos (p. ej. un
+              integrante sin teléfono) quedaba trabado: el envío lo rechazaba
+              y no había ninguna pantalla para completarlo. */}
+          {esBorrador && (
+            <Button
+              title="Editar datos del proyecto ›"
+              variant="outline"
+              onPress={() => router.push(`/(app)/nuevo?id=${expediente!.id}`)}
+            />
+          )}
           {puedeCambiarTitulo && (
             <Button
               title="Solicitar cambio de título ›"

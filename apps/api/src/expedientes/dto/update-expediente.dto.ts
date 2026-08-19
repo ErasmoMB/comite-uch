@@ -1,15 +1,17 @@
-import { IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { AutorDto } from './autor.dto';
 
 // Equivalente a `ExpedienteUpdate` en
-// comite/backend/app/schemas/__init__.py:110-118 — PERO deliberadamente NO
-// se portan `programa_estudios`, `ciclo`, `nivel_posgrado` ni `autores`: el
-// schema Python los declara, pero el handler real `update_expediente`
-// (routes.py:357-375) NUNCA los lee ni los aplica (solo toca
-// titulo_protocolo/tipo_tramite/facultad/estado). Portar los campos no
-// usados solo daría una falsa sensación de soporte. Si esa omisión resulta
-// ser un bug del Python y no una decisión deliberada, hay que confirmarlo
-// con el equipo antes de "corregirlo" aquí, para no divergir del
-// comportamiento real de producción.
+// comite/backend/app/schemas/__init__.py:110-118.
+//
+// `programaEstudios`/`ciclo`/`nivelPosgrado`/`autores` estaban deliberadamente
+// omitidos porque el handler Python de referencia nunca los aplicaba. Resultó
+// ser un bug real y observado: un expediente guardado como borrador con datos
+// de autor incompletos (p. ej. sin teléfono) quedaba trabado — la validación
+// de envío exigía el dato y no existía forma de completarlo. Ahora sí se
+// portan, y `ExpedientesService.update` solo los aplica mientras el
+// expediente siga en borrador.
 export class UpdateExpedienteDto {
   @IsOptional()
   @IsString()
@@ -26,4 +28,25 @@ export class UpdateExpedienteDto {
   @IsOptional()
   @IsString()
   estado?: string;
+
+  @IsOptional()
+  @IsString()
+  programaEstudios?: string;
+
+  @IsOptional()
+  @IsString()
+  ciclo?: string;
+
+  @IsOptional()
+  @IsString()
+  nivelPosgrado?: string;
+
+  // Reemplaza la lista completa de autores (no es un patch por autor): el
+  // formulario del cliente edita la lista entera y la reenvía, igual que al
+  // crear el expediente.
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AutorDto)
+  autores?: AutorDto[];
 }

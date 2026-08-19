@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import PDFDocument from 'pdfkit';
 import { StorageService } from '../storage/storage.service';
+import { UCH_LOGO_PNG, UCH_LOGO_RATIO } from './uch-logo';
 
 /**
  * Genera los mismos dos tipos de PDF que el backend Python
@@ -64,45 +65,187 @@ export class PdfService {
     };
   }
 
+  // ==================== PLANTILLA OFICIAL DEL COMITÉ ====================
+  //
+  // Los dos PDF que recibe el investigador (rúbrica y dictamen) reproducen el
+  // formato en Word que entregó el Comité ("Documento 2 - FORMATO DE
+  // EVALUACIÓN Y DICTAMEN ÉTICO DE PROYECTOS DE INVESTIGACIÓN.docx"): mismo
+  // logo en el encabezado, mismos títulos de sección, misma tabla de datos
+  // generales, misma tabla de 7 criterios y el mismo bloque de DICTAMEN FINAL
+  // con casillas. Antes el dictamen era un párrafo suelto sin ninguna de esas
+  // secciones y el Comité lo observó.
+
+  private static readonly NAVY = '#1F3864';
+
+  private anchoUtil(doc: PDFKit.PDFDocument): number {
+    return doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  }
+
+  /** Logo institucional arriba a la izquierda, como en el encabezado del .docx. */
+  private logo(doc: PDFKit.PDFDocument, anchoCm = 5.2) {
+    const ancho = this.cm(anchoCm);
+    const alto = ancho / UCH_LOGO_RATIO;
+    doc.image(UCH_LOGO_PNG, doc.page.margins.left, doc.y, { width: ancho, height: alto });
+    doc.y += alto + 10;
+  }
+
+  /** Título del documento, centrado, como el encabezado de la plantilla. */
+  private tituloDocumento(doc: PDFKit.PDFDocument, texto: string) {
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(12)
+      .fillColor(PdfService.NAVY)
+      .text(texto, doc.page.margins.left, doc.y, { width: this.anchoUtil(doc), align: 'center' });
+    doc.font('Helvetica').fillColor('black');
+    doc.moveDown(1);
+  }
+
+  /** Encabezado de sección ("DATOS GENERALES", "EVALUACIÓN ÉTICA", ...). */
+  private seccion(doc: PDFKit.PDFDocument, texto: string) {
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(10.5)
+      .fillColor(PdfService.NAVY)
+      .text(texto, doc.page.margins.left, doc.y, { width: this.anchoUtil(doc) });
+    doc.moveDown(0.4);
+    doc.font('Helvetica').fillColor('black');
+  }
+
+  /** Tabla "DATOS GENERALES": etiqueta a la izquierda, valor a la derecha. */
+  private tablaDatos(doc: PDFKit.PDFDocument, filas: [string, string][], anchoEtiquetaCm = 5) {
+    const ancho = this.anchoUtil(doc);
+    doc.fontSize(9.5).fillColor('black');
+    doc.table({
+      columnStyles: [
+        { width: this.cm(anchoEtiquetaCm) },
+        { width: ancho - this.cm(anchoEtiquetaCm) },
+      ],
+      data: filas.map(([etiqueta, valor]) => [this.labelCell(etiqueta), valor || '-']),
+    });
+    doc.moveDown(0.8);
+  }
+
+  /**
+   * Bloque "DICTAMEN FINAL": tres casillas, la del resultado marcada con una
+   * X. Se dibuja con primitivas y no con el carácter de casilla del Word
+   * porque las fuentes estándar de PDF (WinAnsi) no incluyen ese glifo:
+   * saldría como un cuadro vacío o basura.
+   */
+  private dictamenFinal(doc: PDFKit.PDFDocument, resultado: string | null) {
+    this.seccion(doc, 'DICTAMEN FINAL');
+    const opciones: [string, string][] = [
+      ['aprobado', 'Aprobado'],
+      ['aprobado_observaciones', 'Aprobado con observaciones'],
+      ['no_aprobado', 'No aprobado'],
+    ];
+    const x = doc.page.margins.left + 10;
+    const lado = 9;
+    for (const [key, label] of opciones) {
+      const y = doc.y;
+      const marcado = resultado === key;
+      doc.lineWidth(0.8).rect(x, y + 1, lado, lado).stroke(PdfService.NAVY);
+      if (marcado) {
+        doc
+          .moveTo(x + 1.8, y + 2.8)
+          .lineTo(x + lado - 1.8, y + lado - 0.8)
+          .moveTo(x + lado - 1.8, y + 2.8)
+          .lineTo(x + 1.8, y + lado - 0.8)
+          .stroke(PdfService.NAVY);
+      }
+      doc
+        .font(marcado ? 'Helvetica-Bold' : 'Helvetica')
+        .fontSize(10)
+        .fillColor('black')
+        .text(label, x + lado + 8, y, { width: 300 });
+      doc.y = y + lado + 7;
+    }
+    doc.font('Helvetica');
+  }
+
+  /** Líneas de puntos para rellenar a mano, como el bloque de observaciones del .docx. */
+  private lineasPunteadas(doc: PDFKit.PDFDocument, cantidad: number) {
+    const ancho = this.anchoUtil(doc);
+    doc.fontSize(9).fillColor('#98A2B3');
+    for (let i = 0; i < cantidad; i++) {
+      doc.text('.'.repeat(140), doc.page.margins.left, doc.y, {
+        width: ancho,
+        lineBreak: false,
+        ellipsis: false,
+      });
+      doc.y += 13;
+    }
+    doc.fillColor('black');
+  }
+
   async generarDictamen(params: {
     numeroDictamen: string;
+    codigoUnico: string | null;
     titulo: string;
-    contenido: string;
     investigadorNombre: string;
+    evaluadorNombre: string;
     fecha: string;
+    puntajeTotal: number;
+    puntajeMaximo: number;
+    observaciones: string | null;
+    resultado: string | null;
   }): Promise<string> {
     const buffer = await this.buildPdfBuffer(
-      { size: 'letter', margin: 50 },
+      {
+        size: 'A4',
+        margins: {
+          top: this.cm(2),
+          bottom: this.cm(2),
+          left: this.cm(2.2),
+          right: this.cm(2.2),
+        },
+      },
       (doc) => {
-        // --- HEADER ---
+        this.logo(doc);
+        this.tituloDocumento(doc, 'DICTAMEN ÉTICO DE PROYECTOS DE INVESTIGACIÓN');
+
+        this.seccion(doc, 'DATOS GENERALES');
+        this.tablaDatos(doc, [
+          ['Número de dictamen:', params.numeroDictamen],
+          ['Código de expediente:', params.codigoUnico ?? ''],
+          ['Fecha de revisión:', params.fecha],
+          ['Título del proyecto:', params.titulo],
+          ['Investigador(a) / Estudiante(s):', params.investigadorNombre],
+          ['Revisor:', params.evaluadorNombre],
+        ]);
+
+        this.seccion(doc, 'RESULTADO DE LA EVALUACIÓN');
         doc
-          .fontSize(14)
-          .fillColor('#003366')
-          .text('COMITÉ DE ÉTICA EN INVESTIGACIÓN', { align: 'center' });
-        doc.text('DICTAMEN', { align: 'center' });
-        doc.moveDown();
-
-        // --- DATOS DEL DICTAMEN (equivalente a info_table en reportlab) ---
-        doc.fontSize(10).fillColor('black');
-        doc.table({
-          columnStyles: [{ width: 140 }, { width: 300 }],
-          data: [
-            [this.labelCell('Número de Dictamen:'), params.numeroDictamen],
-            [this.labelCell('Fecha:'), params.fecha],
-            [this.labelCell('Investigador:'), params.investigadorNombre],
-          ],
-        });
-        doc.moveDown();
-
-        // --- TÍTULO ---
-        doc.fontSize(11).fillColor('#003366').text(params.titulo);
-        doc.moveDown(0.5);
-
-        // --- CONTENIDO ---
-        doc
+          .font('Helvetica-Bold')
           .fontSize(10)
           .fillColor('black')
-          .text(params.contenido, { align: 'justify' });
+          .text(
+            `Puntaje Total: ${params.puntajeTotal} / ${params.puntajeMaximo}`,
+            doc.page.margins.left,
+            doc.y,
+            { width: this.anchoUtil(doc) },
+          );
+        doc.font('Helvetica');
+        doc.moveDown(1);
+
+        this.seccion(doc, 'OBSERVACIONES DEL COMITÉ');
+        doc
+          .fontSize(9.5)
+          .fillColor('black')
+          .text(params.observaciones?.trim() || 'Ninguna.', doc.page.margins.left, doc.y, {
+            width: this.anchoUtil(doc),
+            align: 'justify',
+          });
+        doc.moveDown(1);
+
+        this.dictamenFinal(doc, params.resultado);
+
+        doc.moveDown(0.5);
+        doc
+          .fontSize(8.5)
+          .fillColor('#667085')
+          .text(`Fecha de emisión: ${params.fecha}`, doc.page.margins.left, doc.y, {
+            width: this.anchoUtil(doc),
+          });
       },
     );
 
@@ -132,6 +275,7 @@ export class PdfService {
       observacion: string | null;
     }>;
     puntajeTotal: number;
+    puntajeMaximo: number;
     observaciones: string | null;
     resultado: string | null;
   }): Promise<string> {
@@ -139,56 +283,30 @@ export class PdfService {
       {
         size: 'A4',
         margins: {
-          top: this.cm(2),
-          bottom: this.cm(2),
-          left: this.cm(2),
-          right: this.cm(2),
+          top: this.cm(1.8),
+          bottom: this.cm(1.8),
+          left: this.cm(1.8),
+          right: this.cm(1.8),
         },
       },
       (doc) => {
-        // --- HEADER ---
-        doc
-          .fontSize(14)
-          .fillColor('#003366')
-          .text('COMITÉ DE ÉTICA EN INVESTIGACIÓN', { align: 'center' });
-        doc
-          .fontSize(11)
-          .text(
-            'FORMATO DE EVALUACIÓN Y DICTAMEN ÉTICO DE PROYECTOS DE INVESTIGACIÓN',
-            { align: 'center' },
-          );
-        doc.moveDown();
+        this.logo(doc);
+        this.tituloDocumento(
+          doc,
+          'FORMATO DE EVALUACIÓN Y DICTAMEN ÉTICO DE PROYECTOS DE INVESTIGACIÓN',
+        );
 
-        // --- DATOS GENERALES ---
-        doc.fontSize(11).fillColor('#003366').text('DATOS GENERALES');
-        doc.moveDown(0.3);
-        doc.fontSize(9).fillColor('black');
-        doc.table({
-          columnStyles: [{ width: this.cm(4.5) }, { width: this.cm(11) }],
-          data: [
-            [
-              this.labelCell('Código de expediente:'),
-              params.codigoUnico ?? '',
-            ],
-            [this.labelCell('Fecha de revisión:'), params.fechaStr],
-            [
-              this.labelCell('Título del proyecto:'),
-              params.tituloProtocolo ?? '',
-            ],
-            [
-              this.labelCell('Investigador(a) / Estudiante(s):'),
-              params.autorStr,
-            ],
-            [this.labelCell('Revisor:'), params.evaluadorNombre],
-          ],
-        });
-        doc.moveDown();
+        this.seccion(doc, 'DATOS GENERALES');
+        this.tablaDatos(doc, [
+          ['Código de expediente:', params.codigoUnico ?? ''],
+          ['Fecha de revisión:', params.fechaStr],
+          ['Título del proyecto:', params.tituloProtocolo ?? ''],
+          ['Investigador(a) / Estudiante(s):', params.autorStr],
+          ['Revisor:', params.evaluadorNombre],
+        ]);
 
-        // --- EVALUACIÓN ÉTICA (tabla de rúbrica, 7 criterios) ---
-        doc.fontSize(11).fillColor('#003366').text('EVALUACIÓN ÉTICA');
-        doc.moveDown(0.3);
-        doc.fontSize(8).fillColor('black');
-
+        this.seccion(doc, 'EVALUACIÓN ÉTICA');
+        doc.fontSize(7.5).fillColor('black');
         const header = [
           this.headerCell('Criterio'),
           this.headerCell('Descripción'),
@@ -197,57 +315,66 @@ export class PdfService {
           this.headerCell('Observaciones'),
         ];
         const rows = params.criterios.map((c) => [
-          c.nombre,
+          { text: c.nombre, font: { family: 'Helvetica-Bold' } },
           c.descripcion,
           String(c.puntajeMax),
           String(c.puntaje),
           c.observacion ?? '',
         ]);
-
+        // Anchos pensados para A4 con margen 1.8cm (~17.4cm útiles): la suma
+        // debe quedar por debajo o pdfkit corta la última columna contra el
+        // borde en vez de reducir las demás.
         doc.table({
           columnStyles: [
-            { width: this.cm(3.2) },
-            { width: this.cm(5.5) },
-            { width: this.cm(1.8), align: 'center' },
-            { width: this.cm(1.8), align: 'center' },
-            { width: this.cm(3.8) },
+            { width: this.cm(2.9) },
+            { width: this.cm(6.6) },
+            { width: this.cm(1.5), align: 'center' },
+            { width: this.cm(1.5), align: 'center' },
+            { width: this.cm(4.7) },
           ],
           data: [header, ...rows],
         });
-        doc.moveDown();
+        doc.moveDown(0.8);
 
-        // --- PUNTAJE TOTAL ---
         doc
-          .fontSize(11)
-          .fillColor('#003366')
-          .text(`Puntaje Total: ${params.puntajeTotal} / 20`);
-        doc.moveDown();
+          .font('Helvetica-Bold')
+          .fontSize(10.5)
+          .fillColor(PdfService.NAVY)
+          .text(
+            `Puntaje Total: ${params.puntajeTotal} / ${params.puntajeMaximo}`,
+            doc.page.margins.left,
+            doc.y,
+            { width: this.anchoUtil(doc) },
+          );
+        doc.font('Helvetica');
+        doc.moveDown(1);
 
-        // --- OBSERVACIONES DEL COMITÉ ---
-        doc.fontSize(11).fillColor('#003366').text('OBSERVACIONES DEL COMITÉ');
-        doc.moveDown(0.2);
-        doc
-          .fontSize(9)
-          .fillColor('black')
-          .text(params.observaciones || 'Ninguna', { align: 'justify' });
-        doc.moveDown();
-
-        // --- DICTAMEN FINAL ---
-        doc.fontSize(11).fillColor('#003366').text('DICTAMEN FINAL');
-        doc.moveDown(0.2);
-        doc.fontSize(10).fillColor('black');
-        const opciones: [string, string][] = [
-          ['aprobado', 'Aprobado'],
-          ['aprobado_observaciones', 'Aprobado con observaciones'],
-          ['no_aprobado', 'No aprobado'],
-        ];
-        for (const [key, label] of opciones) {
-          doc.text(`[${params.resultado === key ? 'X' : ' '}]  ${label}`, {
-            indent: 20,
-          });
+        this.seccion(doc, 'OBSERVACIONES DEL COMITÉ');
+        const texto = params.observaciones?.trim();
+        if (texto) {
+          doc
+            .fontSize(9.5)
+            .fillColor('black')
+            .text(texto, doc.page.margins.left, doc.y, {
+              width: this.anchoUtil(doc),
+              align: 'justify',
+            });
+        } else {
+          // Sin observaciones, el .docx deja las líneas de puntos para llenar
+          // a mano; se conservan para que el impreso se vea igual.
+          this.lineasPunteadas(doc, 3);
         }
-        doc.moveDown();
-        doc.fontSize(9).text(`Fecha de emisión: ${params.fechaStr}`);
+        doc.moveDown(1);
+
+        this.dictamenFinal(doc, params.resultado);
+
+        doc.moveDown(0.5);
+        doc
+          .fontSize(8.5)
+          .fillColor('#667085')
+          .text(`Fecha de emisión: ${params.fechaStr}`, doc.page.margins.left, doc.y, {
+            width: this.anchoUtil(doc),
+          });
       },
     );
 

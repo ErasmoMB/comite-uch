@@ -351,19 +351,23 @@ export class EvaluacionService {
     return this.toResponse(evActualizada);
   }
 
-  // Genera los PDFs correspondientes según el resultado y persiste sus
-  // paths/URLs en la evaluación. Ramas (routes.py:179-191):
-  //   aprobado                -> dictamen solamente
-  //   aprobado_observaciones  -> rúbrica + dictamen
-  //   no_aprobado             -> rúbrica solamente
+  // Genera los PDFs de la evaluación y persiste sus paths en el registro.
+  //
+  // El Python de referencia (routes.py:179-191) condicionaba la rúbrica al
+  // resultado (solo `aprobado_observaciones`/`no_aprobado`) y el dictamen a
+  // los aprobados. Eso producía un bug observado: con resultado `aprobado`
+  // nunca existía rúbrica, pero la pantalla del evaluador ofrece el botón
+  // "Descargar rúbrica" siempre -> 404 -> "No se pudo descargar el archivo".
+  // Además la rúbrica ES el formato oficial de evaluación del Comité (la
+  // tabla de criterios con el puntaje asignado), así que corresponde
+  // emitirla en TODOS los casos, apruebe o no. El dictamen sí sigue siendo
+  // solo para los aprobados: es el acta de aprobación.
   private async generarPdfsPostEnvio(ev: EvaluacionCompleta): Promise<void> {
     const data: Prisma.EvaluacionUpdateInput = {};
 
-    if (ev.resultado === 'aprobado_observaciones' || ev.resultado === 'no_aprobado') {
-      const rubricaPath = await this.generarPdfRubrica(ev);
-      if (rubricaPath) {
-        data.rubricaPdfPath = rubricaPath;
-      }
+    const rubricaPath = await this.generarPdfRubrica(ev);
+    if (rubricaPath) {
+      data.rubricaPdfPath = rubricaPath;
     }
 
     if (ev.resultado === 'aprobado' || ev.resultado === 'aprobado_observaciones') {
@@ -408,14 +412,12 @@ export class EvaluacionService {
     };
     const label = resultadoLabel[ev.resultado ?? ''] ?? (ev.resultado ?? '');
 
-    let notaAdjunto: string;
-    if (ev.resultado === 'no_aprobado') {
-      notaAdjunto = 'Adjunto encontrará la rúbrica de evaluación.';
-    } else if (ev.resultado === 'aprobado') {
-      notaAdjunto = 'Adjunto encontrará el dictamen de aprobación.';
-    } else {
-      notaAdjunto = 'Adjunto encontrará la rúbrica de evaluación y el dictamen correspondiente.';
-    }
+    // La rúbrica (formato oficial de evaluación) va siempre; el dictamen solo
+    // cuando el proyecto quedó aprobado. Ver `generarPdfsPostEnvio`.
+    const notaAdjunto =
+      ev.resultado === 'no_aprobado'
+        ? 'Adjunto encontrará la rúbrica de evaluación.'
+        : 'Adjunto encontrará la rúbrica de evaluación y el dictamen correspondiente.';
 
     const subject = `Resultado de evaluación - ${expediente.codigoUnico ?? ''}`;
     const body =
@@ -506,42 +508,51 @@ export class EvaluacionService {
       fechaStr,
       criterios: criteriosConPuntajes,
       puntajeTotal: ev.puntajeTotal ?? 0,
+      puntajeMaximo: PUNTAJE_TOTAL_MAX,
       observaciones: ev.observaciones,
       resultado: ev.resultado,
     });
   }
 
-  // Equivalente a `_generar_dictamen_para_evaluacion` (routes.py:18-49).
+  // Equivalente a `_generar_dictamen_para_evaluacion` (routes.py:18-49), pero
+  // maquetado sobre la plantilla oficial del Comité (ver PdfService): el
+  // dictamen ya no es un párrafo suelto, lleva el mismo encabezado, la misma
+  // tabla de datos generales y el mismo bloque de casillas que el formato en
+  // Word que usa el Comité en papel.
   private async generarPdfDictamen(ev: EvaluacionCompleta): Promise<string | null> {
     const expediente = ev.expediente;
     if (!expediente) return null;
 
-    const resultadoLabel: Record<string, string> = {
-      aprobado: 'Aprobado',
-      aprobado_observaciones: 'Aprobado con observaciones',
-    };
-    const label = resultadoLabel[ev.resultado ?? ''] ?? 'Aprobado';
+    const evaluador = await this.prisma.user.findUnique({ where: { id: ev.evaluadorId } });
+    const autores = await this.prisma.autorExpediente.findMany({
+      where: { expedienteId: ev.expedienteId },
+      orderBy: { orden: 'asc' },
+    });
 
     const numero = `DIC-${(expediente.codigoUnico ?? String(expediente.id)).replace(/\//g, '-')}`;
     const ahora = new Date();
     const fecha = `${String(ahora.getDate()).padStart(2, '0')}/${String(ahora.getMonth() + 1).padStart(2, '0')}/${ahora.getFullYear()}`;
-    const invNombre = expediente.investigador
-      ? `${expediente.investigador.nombre} ${expediente.investigador.apellido}`.trim()
-      : '';
 
-    const contenido =
-      `El Comité de Ética en Investigación, después de evaluar el proyecto ` +
-      `titulado "${expediente.tituloProtocolo}", ha determinado que el mismo ` +
-      `se encuentra ${label.toLowerCase()}.\n\n` +
-      `Puntaje obtenido: ${ev.puntajeTotal}/${PUNTAJE_TOTAL_MAX}.\n\n` +
-      `Observaciones: ${ev.observaciones || 'Ninguna.'}`;
+    // Mismo criterio que la rúbrica: manda la lista de autores del
+    // expediente y solo si está vacía se cae al dueño de la cuenta.
+    const investigadorNombre =
+      autores.length > 0
+        ? autores.map((a) => a.apellidosNombres).join(', ')
+        : expediente.investigador
+          ? `${expediente.investigador.nombre} ${expediente.investigador.apellido}`.trim()
+          : '';
 
     return this.pdf.generarDictamen({
       numeroDictamen: numero,
+      codigoUnico: expediente.codigoUnico,
       titulo: expediente.tituloProtocolo ?? '',
-      contenido,
-      investigadorNombre: invNombre,
+      investigadorNombre,
+      evaluadorNombre: evaluador ? `${evaluador.nombre} ${evaluador.apellido}`.trim() : '',
       fecha,
+      puntajeTotal: ev.puntajeTotal ?? 0,
+      puntajeMaximo: PUNTAJE_TOTAL_MAX,
+      observaciones: ev.observaciones,
+      resultado: ev.resultado,
     });
   }
 

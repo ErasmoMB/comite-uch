@@ -81,8 +81,10 @@ export default function Proyectos() {
       case 'subsanacion':
         // No hay pantalla de subsanación en este alcance: se navega al detalle.
         return { texto: 'Ver detalle ›', onPress: () => router.push(`/(app)/proyectos/${p.id}`) }
+      // Un borrador se retoma editando sus datos: es el atajo directo para
+      // completar lo que quedó a medias antes de poder enviarlo.
       case 'borrador':
-        return null
+        return { texto: 'Continuar ›', onPress: () => router.push(`/(app)/nuevo?id=${p.id}`) }
       default:
         return { texto: 'Ver detalle ›', onPress: () => router.push(`/(app)/proyectos/${p.id}`) }
     }

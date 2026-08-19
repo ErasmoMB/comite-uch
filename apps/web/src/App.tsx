@@ -39,6 +39,7 @@ export default function App() {
         <Route path="/" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><Dashboard /></RutaProtegida>} />
         <Route path="/proyectos" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><Proyectos /></RutaProtegida>} />
         <Route path="/proyectos/:id" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><DetalleProyecto /></RutaProtegida>} />
+        <Route path="/proyectos/:id/editar" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><NuevoProyecto /></RutaProtegida>} />
         <Route path="/proyectos/:id/subsanar" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><Subsanacion /></RutaProtegida>} />
         <Route path="/proyectos/:id/titulo" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><CambiarTitulo /></RutaProtegida>} />
         <Route path="/cambiar-titulo" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><CambiarTitulo /></RutaProtegida>} />

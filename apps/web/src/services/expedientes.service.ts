@@ -83,6 +83,13 @@ export interface UpdateExpedientePayload {
   tipoTramite?: string
   facultad?: string
   estado?: string
+  // Solo aplicables mientras el expediente sigue en borrador: es lo que
+  // permite completar los datos de un borrador guardado a medias (p. ej. el
+  // teléfono de un integrante) en vez de quedar trabado sin poder enviarlo.
+  programaEstudios?: string
+  ciclo?: string
+  nivelPosgrado?: string
+  autores?: AutorExpedienteDto[]
 }
 
 export function update(id: number, payload: UpdateExpedientePayload): Promise<ExpedienteDto> {

@@ -31,10 +31,11 @@ export async function abrirDocumento(url: string, nombreArchivo: string): Promis
   await Sharing.shareAsync(uri)
 }
 
-// El dictamen SOLO se genera cuando el proyecto queda aprobado (con o sin
-// observaciones); la rúbrica SOLO cuando hay algo que corregir. Ver
+// La rúbrica (el formato oficial de evaluación del Comité) se emite SIEMPRE
+// que la evaluación se envía, apruebe o no. El dictamen solo cuando el
+// proyecto queda aprobado, con o sin observaciones. Ver
 // EvaluacionService.generarPdfsPostEnvio en el backend:
-//   aprobado               -> dictamen
+//   aprobado               -> rúbrica + dictamen
 //   aprobado_observaciones -> rúbrica + dictamen
 //   no_aprobado            -> rúbrica
 export function hayDictamen(resultado: string | null | undefined): boolean {
@@ -42,7 +43,7 @@ export function hayDictamen(resultado: string | null | undefined): boolean {
 }
 
 export function hayRubrica(resultado: string | null | undefined): boolean {
-  return resultado === 'aprobado_observaciones' || resultado === 'no_aprobado'
+  return Boolean(resultado)
 }
 
 export const RESULTADO_LABEL: Record<string, string> = {

@@ -69,7 +69,9 @@ describe('CRITERIOS_RUBRICA (catálogo)', () => {
 // adecuacion_metodologica(2)).
 const PUNTAJES_NO_APROBADO = [1, 2, 2, 1, 1, 2, 1]; // total 10
 const PUNTAJES_APROBADO_OBSERVACIONES = [2, 3, 3, 2, 1, 2, 1]; // total 14
-const PUNTAJES_APROBADO = [2, 4, 4, 3, 2, 3, 1]; // total 19
+// Puntajes por criterio en el orden de CRITERIOS_RUBRICA, respetando el
+// maximo de cada uno segun el formato oficial (3/4/4/2/2/2/3).
+const PUNTAJES_APROBADO = [3, 4, 4, 2, 2, 2, 2]; // total 19
 
 function criteriosBody(puntajes: number[]) {
   return CRITERIOS_RUBRICA.map((c, i) => ({ key: c.key, puntaje: puntajes[i], observacion: `obs-${c.key}` }));
@@ -297,7 +299,8 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Clou
         .set('Authorization', `Bearer ${tokenFor(evaluador1Id)}`)
         .send({ criterios: [{ key: 'valor_pertinencia', puntaje: 99 }] });
       expect(resp.status).toBe(400);
-      expect(resp.body.message).toContain("debe estar entre 0 y 2");
+      // 3 es el maximo de 'valor_pertinencia' en el formato oficial del Comite.
+      expect(resp.body.message).toContain("debe estar entre 0 y 3");
     });
 
     it('rechaza completar sin los 7 criterios', async () => {
@@ -427,7 +430,9 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Clou
       expect(descarga.body.subarray(0, 4).toString()).toBe('%PDF');
     }, 30000);
 
-    it('aprobado (puntaje 19): genera SOLO el dictamen', async () => {
+    // La rubrica es el formato oficial de evaluacion: se emite SIEMPRE, apruebe
+    // o no. El dictamen solo se suma cuando el proyecto queda aprobado.
+    it('aprobado (puntaje 19): genera el dictamen ademas de la rubrica', async () => {
       const exp = await crearExpediente('COMPLETAR-APROBADO');
       const asignacion = await request(app.getHttpServer())
         .post(`/evaluacion/expediente/${exp.id}/asignar`)
@@ -446,7 +451,9 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Clou
       expect(resp.body.dictamenPdfUrl).toBeTruthy();
       expect(resp.body.dictamenPdfUrl.startsWith('http')).toBe(false);
       expect(resp.body.dictamenPdfUrl.startsWith('dictamenes/')).toBe(true);
-      expect(resp.body.rubricaPdfUrl).toBeFalsy();
+      expect(resp.body.rubricaPdfUrl).toBeTruthy();
+      expect(resp.body.rubricaPdfUrl.startsWith('evaluaciones/')).toBe(true);
+      clavesSubidas.push(resp.body.rubricaPdfUrl);
       clavesSubidas.push(keyDeDictamen(resp.body.dictamenPdfUrl, storage.getBucket()));
 
       const expActualizado = await prisma.expediente.findUnique({ where: { id: exp.id } });
@@ -537,7 +544,7 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Clou
       );
     }, 30000);
 
-    it('aprobado: notifica con SOLO el dictamen adjunto', async () => {
+    it('aprobado: notifica adjuntando la rubrica y el dictamen', async () => {
       const exp = await crearExpediente('EMAIL-APROBADO');
       const asignacion = await request(app.getHttpServer())
         .post(`/evaluacion/expediente/${exp.id}/asignar`)
@@ -550,13 +557,15 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Clou
         .set('Authorization', `Bearer ${tokenFor(evaluador1Id)}`)
         .send({ criterios: criteriosBody(PUNTAJES_APROBADO), completa: true, observaciones: 'obs' });
       expect(resp.status).toBe(200);
+      clavesSubidas.push(resp.body.rubricaPdfUrl);
       clavesSubidas.push(keyDeDictamen(resp.body.dictamenPdfUrl, storage.getBucket()));
 
       expect(enviarEmailSpy).toHaveBeenCalledTimes(1);
       const params = enviarEmailSpy.mock.calls[0][0];
-      expect(params.body).toContain('Adjunto encontrará el dictamen de aprobación.');
-      expect(params.attachments).toHaveLength(1);
-      expect(params.attachments?.[0].filename).toBe(`dictamen_evaluacion_${evaluacionId}.pdf`);
+      expect(params.body).toContain('Adjunto encontrará la rúbrica de evaluación y el dictamen correspondiente.');
+      expect(params.attachments).toHaveLength(2);
+      expect(params.attachments?.[0].filename).toBe(`rubrica_evaluacion_${evaluacionId}.pdf`);
+      expect(params.attachments?.[1].filename).toBe(`dictamen_evaluacion_${evaluacionId}.pdf`);
     }, 30000);
 
     it('sin RESEND_API_KEY configurada, EmailService cae en modo simulado y loguea con console.log', async () => {
@@ -582,6 +591,7 @@ describe('Evaluacion (e2e, contra el schema "test" aislado + bucket REAL de Clou
           .set('Authorization', `Bearer ${tokenFor(evaluador1Id)}`)
           .send({ criterios: criteriosBody(PUNTAJES_APROBADO), completa: true, observaciones: 'obs' });
         expect(resp.status).toBe(200);
+        clavesSubidas.push(resp.body.rubricaPdfUrl);
         clavesSubidas.push(keyDeDictamen(resp.body.dictamenPdfUrl, storage.getBucket()));
 
         const llamadaEmail = consoleLogSpy.mock.calls.find(([msg]) =>

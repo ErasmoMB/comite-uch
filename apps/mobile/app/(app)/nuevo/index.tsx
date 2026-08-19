@@ -1,6 +1,6 @@
 // app/(app)/nuevo/index.tsx
 import { useEffect, useState } from 'react'
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button, Card, ErrorText, Field, Input, Loading, Screen, Stepper, TextArea } from '../../../src/components/ui'
@@ -25,6 +25,12 @@ export default function NuevoProyecto() {
   const { usuario } = useApp()
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  // La misma pantalla sirve para crear y para retomar un borrador
+  // (`/(app)/nuevo?id=123`). Antes, apenas se guardaba el borrador los campos
+  // quedaban congelados para siempre: si un integrante había quedado sin
+  // teléfono, el expediente ya no se podía completar NI enviar.
+  const params = useLocalSearchParams<{ id?: string }>()
+  const expedienteIdRuta = params.id ? Number(params.id) : null
 
   const [catalogos, setCatalogos] = useState<CatalogosDto | null>(null)
   const [cargandoCatalogos, setCargandoCatalogos] = useState(true)
@@ -32,6 +38,7 @@ export default function NuevoProyecto() {
 
   const [paso, setPaso] = useState(0)
   const [error, setError] = useState('')
+  const [mensaje, setMensaje] = useState('')
   const [creando, setCreando] = useState(false)
   const [enviandoFinal, setEnviandoFinal] = useState(false)
 
@@ -48,7 +55,7 @@ export default function NuevoProyecto() {
     },
   ])
 
-  const [expedienteId, setExpedienteId] = useState<number | null>(null)
+  const [expedienteId, setExpedienteId] = useState<number | null>(expedienteIdRuta)
   const [docsEstado, setDocsEstado] = useState<Record<string, DocEstado>>({})
 
   useEffect(() => {
@@ -58,11 +65,35 @@ export default function NuevoProyecto() {
         const res = await expedientesService.getCatalogos()
         if (!activo) return
         setCatalogos(res)
-        setPrograma(res.programasEstudios?.[0] ?? '')
-        setCiclo(res.ciclos?.[0] ?? '')
-        setNivelPosgrado(res.nivelesPosgrado?.[0] ?? '')
+
+        if (!expedienteIdRuta) {
+          setPrograma(res.programasEstudios?.[0] ?? '')
+          setCiclo(res.ciclos?.[0] ?? '')
+          setNivelPosgrado(res.nivelesPosgrado?.[0] ?? '')
+          return
+        }
+
+        // Modo edición: se rellena el formulario con lo ya guardado.
+        const expediente = await expedientesService.getById(expedienteIdRuta)
+        if (!activo) return
+        setTitulo(expediente.tituloProtocolo ?? '')
+        setPrograma(expediente.programaEstudios || res.programasEstudios?.[0] || '')
+        setCiclo(expediente.ciclo || res.ciclos?.[0] || '')
+        setNivelPosgrado(expediente.nivelPosgrado || res.nivelesPosgrado?.[0] || '')
+        if (expediente.autores && expediente.autores.length > 0) {
+          setAutores(
+            [...expediente.autores]
+              .sort((a, b) => a.orden - b.orden)
+              .map(a => ({
+                apellidosNombres: a.apellidosNombres ?? '',
+                codigoEstudiante: a.codigoEstudiante ?? '',
+                correo: a.correo ?? '',
+                telefono: a.telefono ?? '',
+              })),
+          )
+        }
       } catch (err) {
-        if (activo) setErrorCatalogos(err instanceof ApiError ? err.message : 'No se pudieron cargar los catálogos.')
+        if (activo) setErrorCatalogos(err instanceof ApiError ? err.message : 'No se pudieron cargar los datos.')
       } finally {
         if (activo) setCargandoCatalogos(false)
       }
@@ -71,7 +102,7 @@ export default function NuevoProyecto() {
     return () => {
       activo = false
     }
-  }, [])
+  }, [expedienteIdRuta])
 
   const modalidad = catalogos?.modalidad ?? null
   const esPregrado = modalidad === 'pregrado'
@@ -83,9 +114,8 @@ export default function NuevoProyecto() {
   // El Comité diferencia: estudiantes suman "autores"; investigadores, "coautores".
   const autorTermCap = esInterno ? 'Coautor' : 'Autor'
   const autorPrincipalLabel = esInterno ? 'Investigador principal' : 'Autor principal'
+  const coautoresLabel = esInterno ? 'Coautores' : 'Autores adicionales'
   const agregarAutorLabel = esInterno ? '+ Agregar coautor' : '+ Agregar autor'
-
-  const datosBloqueados = !!expedienteId
 
   function actualizarAutor(index: number, campo: keyof AutorForm, valor: string) {
     setAutores(prev => prev.map((a, i) => (i === index ? { ...a, [campo]: valor } : a)))
@@ -99,16 +129,21 @@ export default function NuevoProyecto() {
     setAutores(prev => prev.filter((_, i) => i !== index))
   }
 
-  async function crearBorrador() {
+  /**
+   * Guarda el paso 1: crea el borrador la primera vez y lo actualiza en cada
+   * guardado posterior. Devuelve `true` si quedó guardado.
+   */
+  async function guardarDatos(): Promise<boolean> {
     if (titulo.trim().length < TITULO_MIN_CARACTERES) {
       setError(`El título debe tener al menos ${TITULO_MIN_CARACTERES} caracteres.`)
-      return
+      return false
     }
     if (!autores[0]?.apellidosNombres.trim()) {
       setError(`El ${autorPrincipalLabel.toLowerCase()} necesita apellidos y nombres.`)
-      return
+      return false
     }
     setError('')
+    setMensaje('')
     setCreando(true)
     try {
       const autoresPayload: AutorExpedienteDto[] = autores.map((a, i) => ({
@@ -119,30 +154,34 @@ export default function NuevoProyecto() {
         telefono: a.telefono.trim() || null,
         esPrincipal: i === 0,
       }))
-      const nuevo = await expedientesService.create({
+      const datos = {
         tituloProtocolo: titulo.trim(),
-        tipoTramite: 'proyecto_nuevo',
         programaEstudios: programa || undefined,
         ciclo: esPregrado ? ciclo : undefined,
         nivelPosgrado: esPostgrado ? nivelPosgrado : undefined,
         autores: autoresPayload,
-      })
-      setExpedienteId(nuevo.id)
-      setDocsEstado(Object.fromEntries(docsRequeridos.map(d => [d.tipo, { cargado: false, subiendo: false }])))
-      setPaso(1)
+      }
+      if (expedienteId) {
+        await expedientesService.update(expedienteId, datos)
+        setMensaje('Datos guardados.')
+      } else {
+        const nuevo = await expedientesService.create({ ...datos, tipoTramite: 'proyecto_nuevo' })
+        setExpedienteId(nuevo.id)
+        setDocsEstado(Object.fromEntries(docsRequeridos.map(d => [d.tipo, { cargado: false, subiendo: false }])))
+      }
+      return true
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo guardar el borrador.')
+      return false
     } finally {
       setCreando(false)
     }
   }
 
-  function siguientePaso1() {
-    if (expedienteId) {
+  async function siguientePaso1() {
+    if (await guardarDatos()) {
       setPaso(1)
-      return
     }
-    crearBorrador()
   }
 
   // TODO Fase posterior: expo-document-picker — hasta integrar la subida real,
@@ -154,6 +193,9 @@ export default function NuevoProyecto() {
 
   async function enviarFinal() {
     if (!expedienteId) return
+    // Los datos pueden haber cambiado desde el último guardado (justamente el
+    // caso de "me faltó el teléfono"): se guardan antes de enviar.
+    if (!(await guardarDatos())) return
     setEnviandoFinal(true)
     setError('')
     try {
@@ -166,6 +208,46 @@ export default function NuevoProyecto() {
     }
   }
 
+  // Devuelve JSX en vez de ser un componente declarado dentro del render: si
+  // fuera un componente, React lo trataría como un tipo nuevo en cada render y
+  // remontaría los <Input>, que perderían el foco a cada tecla.
+  function camposAutor(index: number) {
+    const a = autores[index]
+    if (!a) return null
+    return (
+      <>
+        <Input
+          placeholder="Apellidos, nombres"
+          value={a.apellidosNombres}
+          onChangeText={v => actualizarAutor(index, 'apellidosNombres', v)}
+        />
+        {/* Código y correo van apilados, no lado a lado: a media pantalla
+            de teléfono un correo institucional no entra y se veía cortado
+            por la izquierda ("regrado@uch.edu.pe"). */}
+        {esEstudiante && (
+          <Input
+            placeholder="Código"
+            value={a.codigoEstudiante}
+            onChangeText={v => actualizarAutor(index, 'codigoEstudiante', v)}
+          />
+        )}
+        <Input
+          placeholder="Correo"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={a.correo}
+          onChangeText={v => actualizarAutor(index, 'correo', v)}
+        />
+        <Input
+          placeholder="Teléfono"
+          keyboardType="phone-pad"
+          value={a.telefono}
+          onChangeText={v => actualizarAutor(index, 'telefono', v)}
+        />
+      </>
+    )
+  }
+
   function cancelar() {
     if (router.canGoBack()) {
       router.back()
@@ -174,7 +256,8 @@ export default function NuevoProyecto() {
     }
   }
 
-  const tituloHeader = paso === 1 ? 'Documentos' : paso === 2 ? 'Enviar' : 'Nuevo proyecto'
+  const tituloHeader =
+    paso === 1 ? 'Documentos' : paso === 2 ? 'Enviar' : expedienteIdRuta ? 'Editar borrador' : 'Nuevo proyecto'
 
   if (cargandoCatalogos) {
     return (
@@ -216,7 +299,6 @@ export default function NuevoProyecto() {
             <TextArea
               placeholder="Efectos del mindfulness en la ansiedad…"
               value={titulo}
-              editable={!datosBloqueados}
               onChangeText={setTitulo}
             />
           </Field>
@@ -228,7 +310,6 @@ export default function NuevoProyecto() {
                 value={programa}
                 opciones={catalogos?.programasEstudios ?? []}
                 onChange={setPrograma}
-                disabled={datosBloqueados}
               />
             </View>
           </View>
@@ -238,7 +319,6 @@ export default function NuevoProyecto() {
               value={ciclo}
               opciones={catalogos?.ciclos ?? []}
               onChange={setCiclo}
-              disabled={datosBloqueados}
             />
           )}
           {esPostgrado && (
@@ -247,80 +327,62 @@ export default function NuevoProyecto() {
               value={nivelPosgrado}
               opciones={catalogos?.nivelesPosgrado ?? []}
               onChange={setNivelPosgrado}
-              disabled={datosBloqueados}
             />
           )}
 
+          {/* El investigador/autor principal va en su PROPIO contenedor: el
+              Comité observó que tenerlo dentro de la caja de "Coautores" se
+              prestaba a confusión. */}
           <View style={s.autoresHeader}>
-            <Text style={s.autoresTitulo}>{esInterno ? 'Coautores' : 'Autores'}</Text>
-            {!datosBloqueados && (
-              <Pressable onPress={agregarCoautor} hitSlop={6}>
-                <Text style={s.link}>{agregarAutorLabel}</Text>
-              </Pressable>
-            )}
+            <Text style={s.autoresTitulo}>{autorPrincipalLabel}</Text>
+          </View>
+          <Card style={{ gap: 8 }}>{camposAutor(0)}</Card>
+
+          <View style={s.autoresHeader}>
+            <Text style={s.autoresTitulo}>{coautoresLabel}</Text>
+            <Pressable onPress={agregarCoautor} hitSlop={6}>
+              <Text style={s.link}>{agregarAutorLabel}</Text>
+            </Pressable>
           </View>
 
-          {autores.map((a, i) => (
-            <Card key={i} style={{ gap: 8 }}>
-              <View style={s.autorCardHeader}>
-                <View style={s.badge}>
-                  <Text style={s.badgeText}>{i === 0 ? autorPrincipalLabel : `${autorTermCap} ${i + 1}`}</Text>
-                </View>
-                {i > 0 && !datosBloqueados && (
-                  <Pressable onPress={() => quitarCoautor(i)} hitSlop={6}>
-                    <Text style={s.linkDanger}>Quitar</Text>
-                  </Pressable>
-                )}
-              </View>
-              <Input
-                placeholder="Apellidos, nombres"
-                value={a.apellidosNombres}
-                editable={!datosBloqueados}
-                onChangeText={v => actualizarAutor(i, 'apellidosNombres', v)}
-              />
-              {/* Código y correo van apilados, no lado a lado: a media pantalla
-                  de teléfono un correo institucional no entra y se veía
-                  cortado por la izquierda ("regrado@uch.edu.pe"). */}
-              {esEstudiante && (
-                <Input
-                  placeholder="Código"
-                  value={a.codigoEstudiante}
-                  editable={!datosBloqueados}
-                  onChangeText={v => actualizarAutor(i, 'codigoEstudiante', v)}
-                />
-              )}
-              <Input
-                placeholder="Correo"
-                autoCapitalize="none"
-                keyboardType="email-address"
-                value={a.correo}
-                editable={!datosBloqueados}
-                onChangeText={v => actualizarAutor(i, 'correo', v)}
-              />
-              <Input
-                placeholder="Teléfono"
-                keyboardType="phone-pad"
-                value={a.telefono}
-                editable={!datosBloqueados}
-                onChangeText={v => actualizarAutor(i, 'telefono', v)}
-              />
-            </Card>
-          ))}
-
-          {!datosBloqueados && (
-            <Pressable onPress={agregarCoautor} style={s.dashedBtn}>
-              <Text style={s.dashedBtnText}>{agregarAutorLabel}</Text>
-            </Pressable>
+          {autores.length === 1 && (
+            <Text style={s.muted}>
+              {esInterno
+                ? 'Aún no agregaste coautores. Si el proyecto es individual, puedes continuar.'
+                : 'Aún no agregaste otros autores. Si el proyecto es individual, puedes continuar.'}
+            </Text>
           )}
 
+          {autores.slice(1).map((_, i) => {
+            const index = i + 1
+            return (
+              <Card key={index} style={{ gap: 8 }}>
+                <View style={s.autorCardHeader}>
+                  <View style={s.badge}>
+                    <Text style={s.badgeText}>{`${autorTermCap} ${index + 1}`}</Text>
+                  </View>
+                  <Pressable onPress={() => quitarCoautor(index)} hitSlop={6}>
+                    <Text style={s.linkDanger}>Quitar</Text>
+                  </Pressable>
+                </View>
+                {camposAutor(index)}
+              </Card>
+            )
+          })}
+
+          <Pressable onPress={agregarCoautor} style={s.dashedBtn}>
+            <Text style={s.dashedBtnText}>{agregarAutorLabel}</Text>
+          </Pressable>
+
           <ErrorText>{error}</ErrorText>
+          {!!mensaje && !error && <Text style={s.okText}>{mensaje}</Text>}
 
           <View style={s.btnRow}>
             <View style={{ flex: 1 }}>
               <Button title="Cancelar" variant="outline" onPress={cancelar} />
             </View>
             <View style={{ flex: 1 }}>
-              <Button title={creando ? 'Guardando…' : 'Siguiente'} loading={creando} onPress={siguientePaso1} />
+              <Button title={creando ? 'Guardando…' : 'Guardar y continuar'} loading={creando} onPress={siguientePaso1} />
             </View>
           </View>
         </Screen>
@@ -446,6 +508,7 @@ const s = StyleSheet.create({
   header: { backgroundColor: '#fff', paddingHorizontal: 16, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: colors.lineSoft },
   headerTitle: { fontSize: 17, fontWeight: '700', color: colors.ink },
   muted: { fontSize: 13, color: colors.slate500 },
+  okText: { fontSize: 13, fontWeight: '600', color: colors.success },
   seccionTitulo: { fontSize: 13, fontWeight: '700', color: colors.navy },
   link: { fontSize: 13, fontWeight: '600', color: colors.primary },
   linkDanger: { fontSize: 13, fontWeight: '600', color: colors.danger },

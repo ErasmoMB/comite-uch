@@ -664,6 +664,35 @@ export class ExpedientesService {
       throw new ForbiddenException('No puedes modificar un expediente enviado');
     }
 
+    // Los catálogos se validan igual que en `create`: el cliente manda el
+    // texto del programa/ciclo, no un id, así que hay que confirmarlo contra
+    // la lista o entraría cualquier cosa a la base.
+    if (dto.programaEstudios && !PROGRAMAS_ESTUDIOS.includes(dto.programaEstudios)) {
+      throw new BadRequestException('Programa de estudios no válido.');
+    }
+    if (dto.ciclo && !CICLOS.includes(dto.ciclo)) {
+      throw new BadRequestException('Ciclo no válido.');
+    }
+    if (dto.nivelPosgrado && !NIVELES_POSGRADO.includes(dto.nivelPosgrado)) {
+      throw new BadRequestException('Nivel de posgrado no válido.');
+    }
+
+    // Editar datos del proyecto/autores solo tiene sentido mientras el
+    // expediente no salió del escritorio del solicitante: una vez enviado, el
+    // expediente ya está en el circuito del Comité y sus datos son parte del
+    // trámite. (El bloqueo por rol de arriba solo cubre roles externos; esto
+    // vale también para los internos.)
+    const editaDatos =
+      dto.programaEstudios !== undefined ||
+      dto.ciclo !== undefined ||
+      dto.nivelPosgrado !== undefined ||
+      dto.autores !== undefined;
+    if (editaDatos && exp.estado !== ESTADO_EXPEDIENTE.BORRADOR) {
+      throw new ForbiddenException(
+        'Los datos del proyecto y sus autores solo se pueden editar mientras el expediente está en borrador.',
+      );
+    }
+
     await this.prisma.$transaction(async (tx) => {
       const data: Record<string, unknown> = {};
       if (dto.tituloProtocolo) {
@@ -675,8 +704,51 @@ export class ExpedientesService {
       if (dto.facultad !== undefined) {
         data.facultad = dto.facultad;
       }
+      if (dto.programaEstudios !== undefined) {
+        data.programaEstudios = dto.programaEstudios || null;
+      }
+      // Cada campo solo aplica a su modalidad, mismo criterio que `create`.
+      if (dto.ciclo !== undefined) {
+        data.ciclo = exp.modalidad === MODALIDAD.PREGRADO ? dto.ciclo || null : null;
+      }
+      if (dto.nivelPosgrado !== undefined) {
+        data.nivelPosgrado = exp.modalidad === MODALIDAD.POSTGRADO ? dto.nivelPosgrado || null : null;
+      }
       if (Object.keys(data).length > 0) {
         await tx.expediente.update({ where: { id }, data });
+      }
+
+      // Reemplazo completo: el formulario edita la lista entera y la reenvía.
+      // Borrar + recrear (en vez de diff por id) mantiene `orden` y
+      // `esPrincipal` coherentes con el orden que mandó el cliente, sin
+      // arrastrar filas huérfanas de un autor que se quitó.
+      if (dto.autores !== undefined) {
+        await tx.autorExpediente.deleteMany({ where: { expedienteId: id } });
+        for (let i = 0; i < dto.autores.length; i++) {
+          const autor = dto.autores[i];
+          await tx.autorExpediente.create({
+            data: {
+              expedienteId: id,
+              orden: i + 1,
+              apellidosNombres: autor.apellidosNombres,
+              codigoEstudiante:
+                exp.modalidad !== MODALIDAD.INTERNO ? (autor.codigoEstudiante ?? null) : null,
+              correo: autor.correo ?? null,
+              telefono: autor.telefono ?? null,
+              esPrincipal: i === 0,
+            },
+          });
+        }
+      }
+      if (editaDatos) {
+        await tx.bitacora.create({
+          data: {
+            expedienteId: id,
+            accion: 'Datos del borrador actualizados',
+            detalle: null,
+            usuarioId: user.id,
+          },
+        });
       }
       if (dto.estado) {
         await actualizarEstado(tx, exp, dto.estado);

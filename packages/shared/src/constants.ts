@@ -175,13 +175,18 @@ export const GUIA_NOMBRES = {
 
 // ==================== RÚBRICA ====================
 
+// Copiados literalmente del formato oficial del Comité ("Documento 2 —
+// FORMATO DE EVALUACIÓN Y DICTAMEN ÉTICO DE PROYECTOS DE INVESTIGACIÓN"):
+// mismos nombres, mismas descripciones y mismo reparto de puntajes (3/4/4/2/
+// 2/2/3 = 20). Antes el reparto divergía del documento (2/4/4/3/2/3/2), lo
+// que hacía que la rúbrica emitida no cuadrara con la plantilla impresa.
 export const CRITERIOS_RUBRICA = [
   {
     key: 'valor_pertinencia',
     nombre: 'Valor y pertinencia del estudio',
     descripcion:
       'El proyecto presenta una justificación clara y una contribución académica y social relevante. Cuenta con los recursos necesarios para su implementación, incluyendo financiamiento, infraestructura, tiempo y personal capacitado.',
-    puntajeMax: 2,
+    puntajeMax: 3,
   },
   {
     key: 'principios_eticos',
@@ -200,27 +205,27 @@ export const CRITERIOS_RUBRICA = [
     key: 'proteccion_participantes',
     nombre: 'Protección de participantes',
     descripcion: 'Identifica riesgos y establece medidas de protección para los participantes.',
-    puntajeMax: 3,
+    puntajeMax: 2,
   },
   {
     key: 'poblaciones_vulnerables',
     nombre: 'Poblaciones vulnerables (si aplica)',
     descripcion:
-      'El proyecto contempla medidas especiales para proteger a poblaciones vulnerables (niños, gestantes, personas con enfermedades mentales o discapacidades, comunidades no familiarizadas con conceptos médicos, personas con libertad restringida). Si no aplica, 0 puntos.',
+      'El proyecto contempla medidas especiales para proteger a poblaciones vulnerables, como niños, mujeres embarazadas o en periodo de lactancia, personas con enfermedades mentales o discapacidades, comunidades no familiarizadas con conceptos médicos, y aquellos con libertad restringida para tomar decisiones independientes (por ejemplo, presos o estudiantes menores de edad).',
     puntajeMax: 2,
   },
   {
     key: 'confidencialidad_datos',
     nombre: 'Confidencialidad y protección de datos',
     descripcion: 'Garantiza privacidad, anonimato o confidencialidad de la información.',
-    puntajeMax: 3,
+    puntajeMax: 2,
   },
   {
     key: 'adecuacion_metodologica',
     nombre: 'Adecuación metodológica',
     descripcion:
       'La metodología es robusta, clara y científicamente válida, coherente con los objetivos y no expone innecesariamente a los participantes.',
-    puntajeMax: 2,
+    puntajeMax: 3,
   },
 ] as const
 

@@ -72,8 +72,10 @@ export default function Proyectos() {
     switch (p.estado) {
       case 'subsanacion':
         return { texto: 'Subsanar ›', onClick: () => navigate(`/proyectos/${p.id}/subsanar`) }
+      // Un borrador se retoma editando sus datos: es el atajo directo para
+      // completar lo que quedó a medias antes de poder enviarlo.
       case 'borrador':
-        return null
+        return { texto: 'Continuar ›', onClick: () => navigate(`/proyectos/${p.id}/editar`) }
       default:
         return { texto: 'Ver detalle ›', onClick: () => navigate(`/proyectos/${p.id}`) }
     }

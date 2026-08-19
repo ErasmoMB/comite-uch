@@ -304,6 +304,18 @@ export default function DetalleProyecto() {
             {enviando ? 'Enviando…' : 'Enviar proyecto'}
           </button>
         )}
+        {/* Sin esta salida, un borrador con datos incompletos (p. ej. un
+            integrante sin teléfono) quedaba trabado: el envío lo rechazaba y
+            no había ninguna pantalla para completarlo. */}
+        {esBorrador && (
+          <button
+            className={desktop ? 'd-btn-ghost' : 'btn btn-outline'}
+            style={desktop ? { width: '100%' } : undefined}
+            onClick={() => navigate(`/proyectos/${expediente!.id}/editar`)}
+          >
+            Editar datos del proyecto ›
+          </button>
+        )}
         {expediente!.estado === 'subsanacion' && (
           <button
             className={desktop ? 'd-btn-primary' : 'btn btn-primary'}

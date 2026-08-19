@@ -5,7 +5,7 @@ import DesktopTopbar from '../../components/DesktopTopbar'
 import ConsultaIa from '../../components/ConsultaIa'
 import DocumentPreviewModal, { type DocumentPreviewState } from '../../components/DocumentPreviewModal'
 import { TopBar } from '../../components/shared'
-import { descargarArchivo } from '../../lib/descargas'
+import { descargarArchivo, hayDictamen } from '../../lib/descargas'
 import { ApiError } from '../../lib/http'
 import { evaluacionService, expedientesService, iaService } from '../../services'
 import type { SugerenciaCriterio } from '../../services/ia.service'
@@ -605,7 +605,7 @@ export default function Evaluacion() {
           <button className={variant === 'mobile' ? 'btn btn-outline' : 'd-btn-ghost'} style={variant === 'desktop' ? { width: '100%' } : undefined} onClick={() => onDescargar('rubrica')}>
             Descargar rúbrica (PDF)
           </button>
-          {evaluacion?.resultado && (
+          {hayDictamen(evaluacion?.resultado) && (
             <button className={variant === 'mobile' ? 'btn btn-primary' : 'd-btn-primary'} style={variant === 'desktop' ? { width: '100%' } : undefined} onClick={() => onDescargar('dictamen')}>
               Descargar dictamen (PDF)
             </button>
