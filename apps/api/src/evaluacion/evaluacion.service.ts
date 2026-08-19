@@ -466,6 +466,16 @@ export class EvaluacionService {
     return Buffer.from(arrayBuffer);
   }
 
+  /** Fecha en el formato del documento (dd/mm/aaaa hh:mm). */
+  private fechaFormato(conHora = false): string {
+    const a = new Date();
+    const dd = String(a.getDate()).padStart(2, '0');
+    const mm = String(a.getMonth() + 1).padStart(2, '0');
+    const base = `${dd}/${mm}/${a.getFullYear()}`;
+    if (!conHora) return base;
+    return `${base} ${String(a.getHours()).padStart(2, '0')}:${String(a.getMinutes()).padStart(2, '0')}`;
+  }
+
   // Equivalente a `_generar_pdf_para_evaluacion` (routes.py:52-82).
   private async generarPdfRubrica(ev: EvaluacionCompleta): Promise<string | null> {
     const expediente = ev.expediente;
@@ -477,8 +487,27 @@ export class EvaluacionService {
       orderBy: { orden: 'asc' },
     });
 
+    return this.pdf.generarEvaluacionCompleta({
+      evaluacionId: ev.id,
+      codigoUnico: expediente.codigoUnico,
+      tituloProtocolo: expediente.tituloProtocolo,
+      autorStr: this.autoresStr(autores, expediente),
+      evaluadorNombre: evaluador ? `${evaluador.nombre} ${evaluador.apellido}`.trim() : '',
+      fechaStr: this.fechaFormato(true),
+      criterios: this.criteriosConPuntajes(ev),
+      puntajeTotal: ev.puntajeTotal ?? 0,
+      puntajeMaximo: PUNTAJE_TOTAL_MAX,
+      observaciones: ev.observaciones,
+      resultado: ev.resultado,
+    });
+  }
+
+  // Los 7 criterios del formato con el puntaje asignado por el evaluador. Se
+  // parte SIEMPRE de CRITERIOS_RUBRICA (no de lo guardado) para que el PDF
+  // liste los 7 en el orden del formato oficial, aunque falte alguno.
+  private criteriosConPuntajes(ev: EvaluacionCompleta) {
     const puntajePorKey = new Map(ev.criterios.map((c) => [c.criterioKey, c]));
-    const criteriosConPuntajes = CRITERIOS_RUBRICA.map((c) => {
+    return CRITERIOS_RUBRICA.map((c) => {
       const match = puntajePorKey.get(c.key);
       return {
         nombre: c.nombre,
@@ -488,37 +517,27 @@ export class EvaluacionService {
         observacion: match?.observacion ?? null,
       };
     });
+  }
 
-    const autorStr =
-      autores.length > 0
-        ? autores.map((a) => a.apellidosNombres).join(', ')
-        : (expediente.investigador ? `${expediente.investigador.nombre} ${expediente.investigador.apellido}`.trim() : '');
-
-    const evaluadorNombre = evaluador ? `${evaluador.nombre} ${evaluador.apellido}`.trim() : '';
-
-    const ahora = new Date();
-    const fechaStr = `${String(ahora.getDate()).padStart(2, '0')}/${String(ahora.getMonth() + 1).padStart(2, '0')}/${ahora.getFullYear()} ${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
-
-    return this.pdf.generarEvaluacionCompleta({
-      evaluacionId: ev.id,
-      codigoUnico: expediente.codigoUnico,
-      tituloProtocolo: expediente.tituloProtocolo,
-      autorStr,
-      evaluadorNombre,
-      fechaStr,
-      criterios: criteriosConPuntajes,
-      puntajeTotal: ev.puntajeTotal ?? 0,
-      puntajeMaximo: PUNTAJE_TOTAL_MAX,
-      observaciones: ev.observaciones,
-      resultado: ev.resultado,
-    });
+  // Nombre de los autores del expediente; si no hay ninguno, cae al dueño de
+  // la cuenta que envió el proyecto.
+  private autoresStr(
+    autores: { apellidosNombres: string }[],
+    expediente: EvaluacionCompleta['expediente'],
+  ): string {
+    if (autores.length > 0) {
+      return autores.map((a) => a.apellidosNombres).join(', ');
+    }
+    return expediente?.investigador
+      ? `${expediente.investigador.nombre} ${expediente.investigador.apellido}`.trim()
+      : '';
   }
 
   // Equivalente a `_generar_dictamen_para_evaluacion` (routes.py:18-49), pero
   // maquetado sobre la plantilla oficial del Comité (ver PdfService): el
-  // dictamen ya no es un párrafo suelto, lleva el mismo encabezado, la misma
-  // tabla de datos generales y el mismo bloque de casillas que el formato en
-  // Word que usa el Comité en papel.
+  // dictamen ya no es un párrafo suelto ni un documento propio -- es el mismo
+  // "FORMATO DE EVALUACIÓN Y DICTAMEN ÉTICO" que exige el Comité, con la
+  // tabla de criterios y el bloque de casillas, más el número de dictamen.
   private async generarPdfDictamen(ev: EvaluacionCompleta): Promise<string | null> {
     const expediente = ev.expediente;
     if (!expediente) return null;
@@ -530,25 +549,15 @@ export class EvaluacionService {
     });
 
     const numero = `DIC-${(expediente.codigoUnico ?? String(expediente.id)).replace(/\//g, '-')}`;
-    const ahora = new Date();
-    const fecha = `${String(ahora.getDate()).padStart(2, '0')}/${String(ahora.getMonth() + 1).padStart(2, '0')}/${ahora.getFullYear()}`;
-
-    // Mismo criterio que la rúbrica: manda la lista de autores del
-    // expediente y solo si está vacía se cae al dueño de la cuenta.
-    const investigadorNombre =
-      autores.length > 0
-        ? autores.map((a) => a.apellidosNombres).join(', ')
-        : expediente.investigador
-          ? `${expediente.investigador.nombre} ${expediente.investigador.apellido}`.trim()
-          : '';
 
     return this.pdf.generarDictamen({
       numeroDictamen: numero,
       codigoUnico: expediente.codigoUnico,
       titulo: expediente.tituloProtocolo ?? '',
-      investigadorNombre,
+      investigadorNombre: this.autoresStr(autores, expediente),
       evaluadorNombre: evaluador ? `${evaluador.nombre} ${evaluador.apellido}`.trim() : '',
-      fecha,
+      fecha: this.fechaFormato(),
+      criterios: this.criteriosConPuntajes(ev),
       puntajeTotal: ev.puntajeTotal ?? 0,
       puntajeMaximo: PUNTAJE_TOTAL_MAX,
       observaciones: ev.observaciones,

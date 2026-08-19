@@ -46,15 +46,6 @@ export class PdfService {
     return new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 14);
   }
 
-  /** Celda "etiqueta" en negrita con fondo celeste, igual que la columna 0 de info_table en reportlab. */
-  private labelCell(text: string) {
-    return {
-      text,
-      font: { family: 'Helvetica-Bold' },
-      backgroundColor: '#E8F0F5',
-    };
-  }
-
   /** Celda de encabezado de la tabla de rúbrica: fondo navy, texto blanco en negrita. */
   private headerCell(text: string) {
     return {
@@ -67,36 +58,90 @@ export class PdfService {
 
   // ==================== PLANTILLA OFICIAL DEL COMITÉ ====================
   //
-  // Los dos PDF que recibe el investigador (rúbrica y dictamen) reproducen el
-  // formato en Word que entregó el Comité ("Documento 2 - FORMATO DE
-  // EVALUACIÓN Y DICTAMEN ÉTICO DE PROYECTOS DE INVESTIGACIÓN.docx"): mismo
-  // logo en el encabezado, mismos títulos de sección, misma tabla de datos
-  // generales, misma tabla de 7 criterios y el mismo bloque de DICTAMEN FINAL
-  // con casillas. Antes el dictamen era un párrafo suelto sin ninguna de esas
-  // secciones y el Comité lo observó.
+  // Los PDF que emite el sistema (rúbrica y dictamen) reproducen el formato en
+  // Word que entregó el Comité ("Documento 2 - FORMATO DE EVALUACIÓN Y
+  // DICTAMEN ÉTICO DE PROYECTOS DE INVESTIGACIÓN.docx"). Se replica tal cual:
+  //
+  //   - A4 HORIZONTAL, márgenes 2.5cm arriba/laterales y 3cm abajo
+  //     (`<w:pgSz w:orient="landscape">` + `<w:pgMar>` del document.xml).
+  //   - Logo institucional arriba a la izquierda, en TODAS las páginas (en el
+  //     .docx vive en el header, así que se repite).
+  //   - Título centrado, encabezados de sección y textos en negro.
+  //   - DATOS GENERALES como lista con viñetas (NO como tabla).
+  //   - Tabla de 7 criterios con cabecera blanca y texto negro centrado.
+  //   - Puntaje Total, OBSERVACIONES DEL COMITÉ y DICTAMEN FINAL con casillas.
+  //
+  // El dictamen NO es un documento distinto: es esta misma plantilla (que ya
+  // incluye el bloque "DICTAMEN FINAL"), con una viñeta extra para el número
+  // de dictamen. Antes era un párrafo suelto sin ninguna de estas secciones y
+  // el Comité lo observó.
 
-  private static readonly NAVY = '#1F3864';
+  /** Márgenes del .docx, en cm. */
+  private static readonly MARGENES = { top: 2.5, bottom: 3, left: 2.5, right: 2.5 };
+
+  /**
+   * Cabecera de la tabla de criterios TAL COMO ESTA EN LA PLANTILLA: fondo
+   * blanco, texto negro en negrita y centrado. (`headerCell`, con su franja
+   * azul y texto blanco, se sigue usando en los listados/reportes del admin,
+   * que no salen de este formato.)
+   */
+  private headerCellFormato(text: string) {
+    return {
+      text,
+      font: { family: 'Helvetica-Bold', size: 8.5 },
+      align: 'center' as const,
+    };
+  }
 
   private anchoUtil(doc: PDFKit.PDFDocument): number {
     return doc.page.width - doc.page.margins.left - doc.page.margins.right;
   }
 
-  /** Logo institucional arriba a la izquierda, como en el encabezado del .docx. */
-  private logo(doc: PDFKit.PDFDocument, anchoCm = 5.2) {
-    const ancho = this.cm(anchoCm);
-    const alto = ancho / UCH_LOGO_RATIO;
-    doc.image(UCH_LOGO_PNG, doc.page.margins.left, doc.y, { width: ancho, height: alto });
-    doc.y += alto + 10;
+  /** Opciones de documento equivalentes al `sectPr` de la plantilla. */
+  private opcionesPlantilla(): PDFKit.PDFDocumentOptions {
+    const m = PdfService.MARGENES;
+    return {
+      size: 'A4',
+      layout: 'landscape',
+      margins: {
+        top: this.cm(m.top),
+        bottom: this.cm(m.bottom),
+        left: this.cm(m.left),
+        right: this.cm(m.right),
+      },
+    };
   }
 
-  /** Título del documento, centrado, como el encabezado de la plantilla. */
+  /**
+   * Logo institucional arriba a la izquierda. En el .docx vive en el header,
+   * así que aparece en cada página: se dibuja en la primera y se engancha a
+   * `pageAdded` para las siguientes. Ojo con el orden -- `pageAdded` se emite
+   * ANTES de que pdfkit reposicione el cursor, así que hay que fijar `doc.y`
+   * a mano después de pintar la imagen.
+   */
+  private logoEnTodasLasPaginas(doc: PDFKit.PDFDocument, anchoCm = 4.85) {
+    const ancho = this.cm(anchoCm);
+    const alto = ancho / UCH_LOGO_RATIO;
+    const pintar = () => {
+      // A 1cm del borde: en el .docx el logo vive en el HEADER, es decir por
+      // encima del margen superior del cuerpo. Dibujarlo dentro del cuerpo
+      // empujaba el contenido hacia abajo y partia la tabla de criterios en
+      // dos paginas, cosa que la plantilla no hace.
+      doc.image(UCH_LOGO_PNG, doc.page.margins.left, this.cm(1), { width: ancho, height: alto });
+      doc.y = doc.page.margins.top;
+    };
+    pintar();
+    doc.on('pageAdded', pintar);
+  }
+
+  /** Título del documento: centrado, negrita, negro (como en la plantilla). */
   private tituloDocumento(doc: PDFKit.PDFDocument, texto: string) {
     doc
       .font('Helvetica-Bold')
-      .fontSize(12)
-      .fillColor(PdfService.NAVY)
+      .fontSize(13)
+      .fillColor('black')
       .text(texto, doc.page.margins.left, doc.y, { width: this.anchoUtil(doc), align: 'center' });
-    doc.font('Helvetica').fillColor('black');
+    doc.font('Helvetica');
     doc.moveDown(1);
   }
 
@@ -105,24 +150,28 @@ export class PdfService {
     doc
       .font('Helvetica-Bold')
       .fontSize(10.5)
-      .fillColor(PdfService.NAVY)
+      .fillColor('black')
       .text(texto, doc.page.margins.left, doc.y, { width: this.anchoUtil(doc) });
-    doc.moveDown(0.4);
+    doc.moveDown(0.5);
     doc.font('Helvetica').fillColor('black');
   }
 
-  /** Tabla "DATOS GENERALES": etiqueta a la izquierda, valor a la derecha. */
-  private tablaDatos(doc: PDFKit.PDFDocument, filas: [string, string][], anchoEtiquetaCm = 5) {
-    const ancho = this.anchoUtil(doc);
-    doc.fontSize(9.5).fillColor('black');
-    doc.table({
-      columnStyles: [
-        { width: this.cm(anchoEtiquetaCm) },
-        { width: ancho - this.cm(anchoEtiquetaCm) },
-      ],
-      data: filas.map(([etiqueta, valor]) => [this.labelCell(etiqueta), valor || '-']),
-    });
-    doc.moveDown(0.8);
+  /**
+   * DATOS GENERALES: lista con viñetas ("• Etiqueta: valor"), igual que la
+   * plantilla. Deliberadamente NO es una tabla -- el Word no la usa aquí.
+   */
+  private datosGenerales(doc: PDFKit.PDFDocument, filas: [string, string][]) {
+    const sangria = this.cm(0.75);
+    const x = doc.page.margins.left + sangria;
+    const ancho = this.anchoUtil(doc) - sangria;
+    for (const [etiqueta, valor] of filas) {
+      const y = doc.y;
+      doc.font('Helvetica').fontSize(10).fillColor('black');
+      doc.text('•', doc.page.margins.left + this.cm(0.25), y, { width: sangria });
+      doc.text(`${etiqueta} ${valor}`.trimEnd(), x, y, { width: ancho });
+      doc.y += 3;
+    }
+    doc.moveDown(1);
   }
 
   /**
@@ -138,26 +187,27 @@ export class PdfService {
       ['aprobado_observaciones', 'Aprobado con observaciones'],
       ['no_aprobado', 'No aprobado'],
     ];
-    const x = doc.page.margins.left + 10;
-    const lado = 9;
+    const x = doc.page.margins.left;
+    const lado = 10;
     for (const [key, label] of opciones) {
       const y = doc.y;
       const marcado = resultado === key;
-      doc.lineWidth(0.8).rect(x, y + 1, lado, lado).stroke(PdfService.NAVY);
+      doc.lineWidth(0.8).rect(x, y + 1.5, lado, lado).stroke('black');
       if (marcado) {
         doc
-          .moveTo(x + 1.8, y + 2.8)
-          .lineTo(x + lado - 1.8, y + lado - 0.8)
-          .moveTo(x + lado - 1.8, y + 2.8)
-          .lineTo(x + 1.8, y + lado - 0.8)
-          .stroke(PdfService.NAVY);
+          .moveTo(x + 2, y + 3.5)
+          .lineTo(x + lado - 2, y + lado - 0.5)
+          .moveTo(x + lado - 2, y + 3.5)
+          .lineTo(x + 2, y + lado - 0.5)
+          .stroke('black');
       }
       doc
         .font(marcado ? 'Helvetica-Bold' : 'Helvetica')
-        .fontSize(10)
+        .fontSize(10.5)
         .fillColor('black')
-        .text(label, x + lado + 8, y, { width: 300 });
-      doc.y = y + lado + 7;
+        .text(label, x + lado + 8, y, { width: this.anchoUtil(doc) - lado - 8 });
+      // La plantilla deja las tres opciones bien separadas, no pegadas.
+      doc.y = y + lado + 14;
     }
     doc.font('Helvetica');
   }
@@ -165,16 +215,128 @@ export class PdfService {
   /** Líneas de puntos para rellenar a mano, como el bloque de observaciones del .docx. */
   private lineasPunteadas(doc: PDFKit.PDFDocument, cantidad: number) {
     const ancho = this.anchoUtil(doc);
-    doc.fontSize(9).fillColor('#98A2B3');
+    doc.font('Helvetica').fontSize(10).fillColor('black');
+    // Se calcula cuántos puntos entran en el ancho útil en vez de fijar un
+    // número: en A4 horizontal un largo fijo se quedaba corto o desbordaba.
+    const puntos = Math.floor(ancho / doc.widthOfString('.'));
     for (let i = 0; i < cantidad; i++) {
-      doc.text('.'.repeat(140), doc.page.margins.left, doc.y, {
+      doc.text('.'.repeat(puntos), doc.page.margins.left, doc.y, {
         width: ancho,
         lineBreak: false,
         ellipsis: false,
       });
-      doc.y += 13;
+      doc.y += 20;
     }
-    doc.fillColor('black');
+  }
+
+  /**
+   * Dibuja la plantilla completa. La usan tanto la rúbrica como el dictamen;
+   * lo único que cambia es el número de dictamen en DATOS GENERALES.
+   */
+  private dibujarFormatoOficial(
+    doc: PDFKit.PDFDocument,
+    params: {
+      numeroDictamen?: string;
+      codigoUnico: string | null;
+      tituloProtocolo: string | null;
+      autorStr: string;
+      evaluadorNombre: string;
+      fechaStr: string;
+      criterios: Array<{
+        nombre: string;
+        descripcion: string;
+        puntajeMax: number;
+        puntaje: number;
+        observacion: string | null;
+      }>;
+      puntajeTotal: number;
+      puntajeMaximo: number;
+      observaciones: string | null;
+      resultado: string | null;
+    },
+  ) {
+    this.logoEnTodasLasPaginas(doc);
+    this.tituloDocumento(doc, 'FORMATO DE EVALUACIÓN Y DICTAMEN ÉTICO DE PROYECTOS DE INVESTIGACIÓN');
+
+    this.seccion(doc, 'DATOS GENERALES');
+    const datos: [string, string][] = [];
+    if (params.numeroDictamen) {
+      datos.push(['Número de dictamen:', params.numeroDictamen]);
+    }
+    datos.push(
+      ['Código de expediente:', params.codigoUnico ?? ''],
+      ['Fecha de revisión:', params.fechaStr],
+      ['Título del proyecto:', params.tituloProtocolo ?? ''],
+      ['Investigador(a) / Estudiante(s):', params.autorStr],
+      ['Revisor:', params.evaluadorNombre],
+    );
+    this.datosGenerales(doc, datos);
+
+
+    this.seccion(doc, 'EVALUACIÓN ÉTICA');
+    doc.font('Helvetica').fontSize(8.5).fillColor('black');
+    const header = [
+      this.headerCellFormato('Criterio'),
+      this.headerCellFormato('Descripción'),
+      this.headerCellFormato('Puntaje Máximo'),
+      this.headerCellFormato('Puntaje Obtenido'),
+      this.headerCellFormato('Observaciones'),
+    ];
+    const rows = params.criterios.map((c) => [
+      c.nombre,
+      c.descripcion,
+      String(c.puntajeMax),
+      String(c.puntaje),
+      c.observacion ?? '',
+    ]);
+    // Anchos tomados de la tabla del .docx, proporcionalmente a los 24.7cm
+    // utiles de A4 horizontal con margenes de 2.5cm.
+    doc.table({
+      columnStyles: [
+        { width: this.cm(5.0) },
+        { width: this.cm(10.4) },
+        { width: this.cm(1.6), align: 'center' },
+        { width: this.cm(1.9), align: 'center' },
+        { width: this.cm(5.8) },
+      ],
+      data: [header, ...rows],
+    });
+
+    // La plantilla corta aquí: página 1 = datos + tabla de criterios;
+    // página 2 = Puntaje Total, OBSERVACIONES DEL COMITÉ y DICTAMEN FINAL.
+    // Se fuerza el salto para que el impreso coincida página por página, en
+    // vez de depender de cuánto haya crecido la tabla.
+    doc.addPage();
+
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(11)
+      .fillColor('black')
+      .text(`Puntaje Total: ${params.puntajeTotal} / ${params.puntajeMaximo}`, doc.page.margins.left, doc.y, {
+        width: this.anchoUtil(doc),
+      });
+    doc.font('Helvetica');
+    doc.moveDown(2);
+
+    this.seccion(doc, 'OBSERVACIONES DEL COMITÉ');
+    const texto = params.observaciones?.trim();
+    if (texto) {
+      doc
+        .font('Helvetica')
+        .fontSize(10.5)
+        .fillColor('black')
+        .text(texto, doc.page.margins.left, doc.y, {
+          width: this.anchoUtil(doc),
+          align: 'justify',
+        });
+    } else {
+      // Sin observaciones, el .docx deja las líneas de puntos para llenar
+      // a mano; se conservan para que el impreso se vea igual.
+      this.lineasPunteadas(doc, 3);
+    }
+    doc.moveDown(2);
+
+    this.dictamenFinal(doc, params.resultado);
   }
 
   async generarDictamen(params: {
@@ -184,70 +346,33 @@ export class PdfService {
     investigadorNombre: string;
     evaluadorNombre: string;
     fecha: string;
+    criterios: Array<{
+      nombre: string;
+      descripcion: string;
+      puntajeMax: number;
+      puntaje: number;
+      observacion: string | null;
+    }>;
     puntajeTotal: number;
     puntajeMaximo: number;
     observaciones: string | null;
     resultado: string | null;
   }): Promise<string> {
-    const buffer = await this.buildPdfBuffer(
-      {
-        size: 'A4',
-        margins: {
-          top: this.cm(2),
-          bottom: this.cm(2),
-          left: this.cm(2.2),
-          right: this.cm(2.2),
-        },
-      },
-      (doc) => {
-        this.logo(doc);
-        this.tituloDocumento(doc, 'DICTAMEN ÉTICO DE PROYECTOS DE INVESTIGACIÓN');
-
-        this.seccion(doc, 'DATOS GENERALES');
-        this.tablaDatos(doc, [
-          ['Número de dictamen:', params.numeroDictamen],
-          ['Código de expediente:', params.codigoUnico ?? ''],
-          ['Fecha de revisión:', params.fecha],
-          ['Título del proyecto:', params.titulo],
-          ['Investigador(a) / Estudiante(s):', params.investigadorNombre],
-          ['Revisor:', params.evaluadorNombre],
-        ]);
-
-        this.seccion(doc, 'RESULTADO DE LA EVALUACIÓN');
-        doc
-          .font('Helvetica-Bold')
-          .fontSize(10)
-          .fillColor('black')
-          .text(
-            `Puntaje Total: ${params.puntajeTotal} / ${params.puntajeMaximo}`,
-            doc.page.margins.left,
-            doc.y,
-            { width: this.anchoUtil(doc) },
-          );
-        doc.font('Helvetica');
-        doc.moveDown(1);
-
-        this.seccion(doc, 'OBSERVACIONES DEL COMITÉ');
-        doc
-          .fontSize(9.5)
-          .fillColor('black')
-          .text(params.observaciones?.trim() || 'Ninguna.', doc.page.margins.left, doc.y, {
-            width: this.anchoUtil(doc),
-            align: 'justify',
-          });
-        doc.moveDown(1);
-
-        this.dictamenFinal(doc, params.resultado);
-
-        doc.moveDown(0.5);
-        doc
-          .fontSize(8.5)
-          .fillColor('#667085')
-          .text(`Fecha de emisión: ${params.fecha}`, doc.page.margins.left, doc.y, {
-            width: this.anchoUtil(doc),
-          });
-      },
-    );
+    const buffer = await this.buildPdfBuffer(this.opcionesPlantilla(), (doc) => {
+      this.dibujarFormatoOficial(doc, {
+        numeroDictamen: params.numeroDictamen,
+        codigoUnico: params.codigoUnico,
+        tituloProtocolo: params.titulo,
+        autorStr: params.investigadorNombre,
+        evaluadorNombre: params.evaluadorNombre,
+        fechaStr: params.fecha,
+        criterios: params.criterios,
+        puntajeTotal: params.puntajeTotal,
+        puntajeMaximo: params.puntajeMaximo,
+        observaciones: params.observaciones,
+        resultado: params.resultado,
+      });
+    });
 
     const key = `dictamenes/${params.numeroDictamen}_${this.timestamp()}.pdf`;
     await this.storage.putObject(key, buffer, 'application/pdf');
@@ -279,104 +404,9 @@ export class PdfService {
     observaciones: string | null;
     resultado: string | null;
   }): Promise<string> {
-    const buffer = await this.buildPdfBuffer(
-      {
-        size: 'A4',
-        margins: {
-          top: this.cm(1.8),
-          bottom: this.cm(1.8),
-          left: this.cm(1.8),
-          right: this.cm(1.8),
-        },
-      },
-      (doc) => {
-        this.logo(doc);
-        this.tituloDocumento(
-          doc,
-          'FORMATO DE EVALUACIÓN Y DICTAMEN ÉTICO DE PROYECTOS DE INVESTIGACIÓN',
-        );
-
-        this.seccion(doc, 'DATOS GENERALES');
-        this.tablaDatos(doc, [
-          ['Código de expediente:', params.codigoUnico ?? ''],
-          ['Fecha de revisión:', params.fechaStr],
-          ['Título del proyecto:', params.tituloProtocolo ?? ''],
-          ['Investigador(a) / Estudiante(s):', params.autorStr],
-          ['Revisor:', params.evaluadorNombre],
-        ]);
-
-        this.seccion(doc, 'EVALUACIÓN ÉTICA');
-        doc.fontSize(7.5).fillColor('black');
-        const header = [
-          this.headerCell('Criterio'),
-          this.headerCell('Descripción'),
-          this.headerCell('Puntaje Máximo'),
-          this.headerCell('Puntaje Obtenido'),
-          this.headerCell('Observaciones'),
-        ];
-        const rows = params.criterios.map((c) => [
-          { text: c.nombre, font: { family: 'Helvetica-Bold' } },
-          c.descripcion,
-          String(c.puntajeMax),
-          String(c.puntaje),
-          c.observacion ?? '',
-        ]);
-        // Anchos pensados para A4 con margen 1.8cm (~17.4cm útiles): la suma
-        // debe quedar por debajo o pdfkit corta la última columna contra el
-        // borde en vez de reducir las demás.
-        doc.table({
-          columnStyles: [
-            { width: this.cm(2.9) },
-            { width: this.cm(6.6) },
-            { width: this.cm(1.5), align: 'center' },
-            { width: this.cm(1.5), align: 'center' },
-            { width: this.cm(4.7) },
-          ],
-          data: [header, ...rows],
-        });
-        doc.moveDown(0.8);
-
-        doc
-          .font('Helvetica-Bold')
-          .fontSize(10.5)
-          .fillColor(PdfService.NAVY)
-          .text(
-            `Puntaje Total: ${params.puntajeTotal} / ${params.puntajeMaximo}`,
-            doc.page.margins.left,
-            doc.y,
-            { width: this.anchoUtil(doc) },
-          );
-        doc.font('Helvetica');
-        doc.moveDown(1);
-
-        this.seccion(doc, 'OBSERVACIONES DEL COMITÉ');
-        const texto = params.observaciones?.trim();
-        if (texto) {
-          doc
-            .fontSize(9.5)
-            .fillColor('black')
-            .text(texto, doc.page.margins.left, doc.y, {
-              width: this.anchoUtil(doc),
-              align: 'justify',
-            });
-        } else {
-          // Sin observaciones, el .docx deja las líneas de puntos para llenar
-          // a mano; se conservan para que el impreso se vea igual.
-          this.lineasPunteadas(doc, 3);
-        }
-        doc.moveDown(1);
-
-        this.dictamenFinal(doc, params.resultado);
-
-        doc.moveDown(0.5);
-        doc
-          .fontSize(8.5)
-          .fillColor('#667085')
-          .text(`Fecha de emisión: ${params.fechaStr}`, doc.page.margins.left, doc.y, {
-            width: this.anchoUtil(doc),
-          });
-      },
-    );
+    const buffer = await this.buildPdfBuffer(this.opcionesPlantilla(), (doc) => {
+      this.dibujarFormatoOficial(doc, params);
+    });
 
     const key = `evaluaciones/evaluacion_${params.evaluacionId}_${this.timestamp()}.pdf`;
     await this.storage.putObject(key, buffer, 'application/pdf');

@@ -211,7 +211,7 @@ export const CRITERIOS_RUBRICA = [
     key: 'poblaciones_vulnerables',
     nombre: 'Poblaciones vulnerables (si aplica)',
     descripcion:
-      'El proyecto contempla medidas especiales para proteger a poblaciones vulnerables, como niños, mujeres embarazadas o en periodo de lactancia, personas con enfermedades mentales o discapacidades, comunidades no familiarizadas con conceptos médicos, y aquellos con libertad restringida para tomar decisiones independientes (por ejemplo, presos o estudiantes menores de edad).',
+      'El proyecto contempla medidas especiales para proteger a poblaciones vulnerables, como niños, mujeres embarazadas o en periodo de lactancia, personas con enfermedades mentales o discapacidades, comunidades no familiarizadas con conceptos médicos, y aquellos con libertad restringida para tomar decisiones independientes (por ejemplo, presos o estudiantes menores de edad)',
     puntajeMax: 2,
   },
   {
