@@ -14,10 +14,11 @@ const MIME_POR_EXTENSION: Record<string, string> = {
 // JwtAuthGuard, son plantillas/guías públicas del Comité.
 @Controller('plantillas')
 export class PlantillasController {
-  // process.cwd() (no __dirname): Nest siempre se ejecuta con el cwd en la
-  // raíz de apps/server sin importar si el build empaqueta todo en un solo
-  // dist/main.js (webpack) o mantiene la estructura de carpetas de src/.
-  private readonly plantillasDir = path.join(process.cwd(), 'plantillas');
+  // __dirname (no process.cwd()): en producción (Render) el proceso arranca
+  // con el cwd en la raíz del monorepo, no en apps/api/ — igual que
+  // main.ts resuelve web/dist relativo a __dirname en vez de al cwd.
+  // Desde dist/plantillas/plantillas.controller.js, '..','..' sube a apps/api/.
+  private readonly plantillasDir = path.join(__dirname, '..', '..', 'plantillas');
 
   @Get(':key')
   get(@Param('key') key: string, @Query('modo') modo: 'ver' | 'descargar' = 'ver', @Res() res: Response) {
