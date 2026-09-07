@@ -77,6 +77,17 @@ model Expediente {
   tituloProtocolo  String    @map("titulo_protocolo")
   investigadorId   Int       @map("investigador_id")
   tipoTramite      String?   @map("tipo_tramite") @db.VarChar(100)
+  // Observación 1 del Comité (2026-09-07): ARTICULO | TESIS | OTRO. Se guarda
+  // como VarChar y no como enum de Postgres por consistencia con el resto del
+  // esquema (`estado`, `modalidad`, `tipo_tramite` también son texto libre
+  // validado en la capa de servicio contra el catálogo compartido).
+  // Nullable: los expedientes creados antes de esta observación no lo tienen.
+  tipoProyecto     String?   @map("tipo_proyecto") @db.VarChar(20)
+  // Observación 4: envíos consumidos por este expediente. 1 = envío original;
+  // se incrementa en cada reenvío tras un rechazo/observación, con tope
+  // MAX_INTENTOS_REENVIO (3). Nullable con default para que las filas
+  // existentes no queden en NULL al empujar el cambio.
+  intentos         Int?      @default(1)
   facultad         String?   @db.VarChar(255)
   modalidad        String?   @db.VarChar(30)
   programaEstudios String?   @map("programa_estudios") @db.VarChar(100)
