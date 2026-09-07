@@ -14,6 +14,7 @@ export type {
   RequisitosDto,
   CatalogosDto,
   ElegibleCambioTituloDto,
+  ExpedienteRechazadoDto,
   EvaluacionCriterioDto,
   EvaluacionDto,
   CriterioRubrica,

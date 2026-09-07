@@ -2,7 +2,7 @@
 import { request, uploadDocumento, type RNFile } from '../lib/http'
 import type {
   AutorExpedienteDto, BitacoraDto, CatalogosDto, DocumentoDto, ElegibleCambioTituloDto,
-  ExpedienteDto, HistorialDto, RequisitosDto,
+  ExpedienteDto, ExpedienteRechazadoDto, HistorialDto, RequisitosDto,
 } from '../types/api'
 
 export function list(skip = 0, limit = 100): Promise<ExpedienteDto[]> {
@@ -42,6 +42,8 @@ export async function getDetalle(id: number) {
 export interface CreateExpedientePayload {
   tituloProtocolo: string
   tipoTramite?: string
+  // Observación 1 del Comité: ARTICULO | TESIS | OTRO.
+  tipoProyecto?: string
   facultad?: string
   programaEstudios?: string
   ciclo?: string
@@ -66,6 +68,7 @@ export function createCambioTitulo(payload: CambioTituloPayload): Promise<Expedi
 export interface UpdateExpedientePayload {
   tituloProtocolo?: string
   tipoTramite?: string
+  tipoProyecto?: string
   facultad?: string
   estado?: string
   // Solo aplicables mientras el expediente sigue en borrador: es lo que
@@ -87,6 +90,20 @@ export function enviar(id: number): Promise<{ message: string; codigo?: string }
 }
 export function subsanar(id: number, observaciones: string): Promise<{ message: string; estado: string }> {
   return request(`/expedientes/${id}/subsanacion`, { method: 'POST', body: { observaciones } })
+}
+
+// Observación 4 del Comité: vista "Mis proyectos rechazados".
+export function getMisRechazados(): Promise<ExpedienteRechazadoDto[]> {
+  return request<ExpedienteRechazadoDto[]>('/expedientes/mis-rechazados')
+}
+
+// Observación 4: levantar las observaciones y devolver el proyecto a la cola.
+// El backend rechaza (400) cuando el expediente ya agotó sus 3 intentos.
+export function reenviar(
+  id: number,
+  observaciones: string,
+): Promise<{ mensaje: string; estado: string; intentos: number; intentosMaximos: number }> {
+  return request(`/expedientes/${id}/reenviar`, { method: 'POST', body: { observaciones } })
 }
 
 // Subida real de archivo queda para una fase posterior (expo-document-picker).

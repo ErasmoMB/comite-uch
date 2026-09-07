@@ -44,6 +44,12 @@ export default function NuevoProyecto() {
   const [programa, setPrograma] = useState('')
   const [ciclo, setCiclo] = useState('')
   const [nivelPosgrado, setNivelPosgrado] = useState('')
+  // Observación 1 del Comité: tipo de proyecto (artículo / tesis / otro).
+  // `tipoProyectoTocado` distingue "todavía no lo eligió nadie" de "el usuario
+  // ya decidió": mientras esté en false, cambiar el ciclo vuelve a aplicar la
+  // preselección; una vez que el usuario elige, su decisión manda.
+  const [tipoProyecto, setTipoProyecto] = useState('')
+  const [tipoProyectoTocado, setTipoProyectoTocado] = useState(false)
   const [autores, setAutores] = useState<AutorForm[]>([
     {
       apellidosNombres: usuario ? `${usuario.apellidos}, ${usuario.nombres}` : '',
@@ -82,6 +88,12 @@ export default function NuevoProyecto() {
         setPrograma(expediente.programaEstudios || res.programasEstudios?.[0] || '')
         setCiclo(expediente.ciclo || res.ciclos?.[0] || '')
         setNivelPosgrado(expediente.nivelPosgrado || res.nivelesPosgrado?.[0] || '')
+        // Un borrador que ya trae tipo de proyecto guardado no debe perderlo
+        // porque el efecto de preselección vuelva a correr.
+        if (expediente.tipoProyecto) {
+          setTipoProyecto(expediente.tipoProyecto)
+          setTipoProyectoTocado(true)
+        }
         if (expediente.autores && expediente.autores.length > 0) {
           setAutores(
             [...expediente.autores]
@@ -115,6 +127,20 @@ export default function NuevoProyecto() {
       activo = false
     }
   }, [expedienteIdRuta])
+
+  // Observación 1: preselección por ciclo. VII -> artículo, IX -> tesis; los
+  // ciclos VIII y X (y quien no tiene ciclo: posgrado e investigadores) no
+  // tienen criterio confirmado por el Comité, así que eligen a mano.
+  useEffect(() => {
+    if (tipoProyectoTocado) return
+    const sugerido = catalogos?.tipoProyectoPorCiclo?.[ciclo] ?? ''
+    setTipoProyecto(sugerido)
+  }, [ciclo, catalogos, tipoProyectoTocado])
+
+  function elegirTipoProyecto(valor: string) {
+    setTipoProyecto(valor)
+    setTipoProyectoTocado(true)
+  }
 
   const modalidad = catalogos?.modalidad ?? null
   const esPregrado = modalidad === 'pregrado'
@@ -167,12 +193,17 @@ export default function NuevoProyecto() {
       setError(`El ${autorPrincipalLabel.toLowerCase()} necesita apellidos y nombres.`)
       return false
     }
+    if (!tipoProyecto) {
+      setError('Indica si el proyecto es un artículo, una tesis u otro tipo de trabajo.')
+      return false
+    }
     setError('')
     setMensaje('')
     setCreando(true)
     try {
       const datos = {
         tituloProtocolo: titulo.trim(),
+        tipoProyecto: tipoProyecto || undefined,
         programaEstudios: programa || undefined,
         ciclo: esPregrado ? ciclo : undefined,
         nivelPosgrado: esPostgrado ? nivelPosgrado : undefined,
@@ -451,6 +482,20 @@ export default function NuevoProyecto() {
             )}
           </div>
 
+          <div className="field">
+            <label>Tipo de proyecto</label>
+            <div className="select-wrap">
+              <select className="select" value={tipoProyecto} onChange={e => elegirTipoProyecto(e.target.value)}>
+                <option value="">Selecciona…</option>
+                {catalogos?.tiposProyecto.map(t => (
+                  <option key={t.valor} value={t.valor}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {bloqueAutores('mobile')}
 
           {error && <p className="field-error" style={{ margin: 0 }}>{error}</p>}
@@ -610,6 +655,18 @@ export default function NuevoProyecto() {
                       </select>
                     </div>
                   )}
+                </div>
+
+                <div>
+                  <div className="d-field-label">Tipo de proyecto</div>
+                  <select className="d-field" value={tipoProyecto} onChange={e => elegirTipoProyecto(e.target.value)}>
+                    <option value="">Selecciona…</option>
+                    {catalogos?.tiposProyecto.map(t => (
+                      <option key={t.valor} value={t.valor}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {bloqueAutores('desktop')}

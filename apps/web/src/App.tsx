@@ -6,11 +6,13 @@ import Consultas from './pages/Consultas'
 import Dashboard from './pages/Dashboard'
 import DetalleProyecto from './pages/DetalleProyecto'
 import Login from './pages/Login'
+import MisRechazados from './pages/MisRechazados'
 import NuevoProyecto from './pages/NuevoProyecto'
 import NuevoProyectoExito from './pages/NuevoProyectoExito'
 import Perfil from './pages/Perfil'
 import Proyectos from './pages/Proyectos'
 import Recuperar from './pages/Recuperar'
+import ReenviarProyecto from './pages/ReenviarProyecto'
 import Registro from './pages/Registro'
 import RegistroExito from './pages/RegistroExito'
 import Reportes from './pages/Reportes'
@@ -38,9 +40,11 @@ export default function App() {
         {/* Investigador / solicitante */}
         <Route path="/" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><Dashboard /></RutaProtegida>} />
         <Route path="/proyectos" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><Proyectos /></RutaProtegida>} />
+        <Route path="/proyectos/rechazados" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><MisRechazados /></RutaProtegida>} />
         <Route path="/proyectos/:id" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><DetalleProyecto /></RutaProtegida>} />
         <Route path="/proyectos/:id/editar" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><NuevoProyecto /></RutaProtegida>} />
         <Route path="/proyectos/:id/subsanar" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><Subsanacion /></RutaProtegida>} />
+        <Route path="/proyectos/:id/reenviar" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><ReenviarProyecto /></RutaProtegida>} />
         <Route path="/proyectos/:id/titulo" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><CambiarTitulo /></RutaProtegida>} />
         <Route path="/cambiar-titulo" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><CambiarTitulo /></RutaProtegida>} />
         <Route path="/nuevo" element={<RutaProtegida roles={['estudiante_pregrado', 'estudiante_postgrado', 'investigador', 'estudiante']}><NuevoProyecto /></RutaProtegida>} />

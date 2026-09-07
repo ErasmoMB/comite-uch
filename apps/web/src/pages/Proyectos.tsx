@@ -95,6 +95,9 @@ export default function Proyectos() {
         <Link to="/cambiar-titulo" className="link" style={{ alignSelf: 'flex-start' }}>
           Cambiar título de un proyecto aprobado ›
         </Link>
+        <Link to="/proyectos/rechazados" className="link" style={{ alignSelf: 'flex-start' }}>
+          Mis proyectos rechazados ›
+        </Link>
         <div style={{ position: 'relative' }}>
           <svg
             width="16"
@@ -224,6 +227,9 @@ export default function Proyectos() {
             titulo="Mis proyectos"
             extra={
               <>
+                <button className="d-btn-ghost" onClick={() => navigate('/proyectos/rechazados')}>
+                  Rechazados
+                </button>
                 <button className="d-btn-ghost" onClick={() => navigate('/cambiar-titulo')}>
                   Cambiar título
                 </button>
