@@ -11,26 +11,35 @@ import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { ConfigService } from '../config/config.service';
 import { CLAVE_FECHA_LIMITE, parseFechaLimite } from '../config/fecha-limite.util';
+import { huellaAutores, normalizarTexto, similitudTitulos } from '@comite/shared';
 import {
   CICLOS,
   CICLOS_CAMBIO_TITULO,
+  CLAVE_UMBRAL_SIMILITUD,
   DOCUMENTOS_REQUERIDOS,
   DOCUMENTO_FORMATOS,
   DOCUMENTO_LABELS,
   DOC_SOLICITUD_CAMBIO_TITULO,
   ESTADOS_ELEGIBLE_CAMBIO_TITULO,
+  ESTADOS_REENVIABLES,
   ESTADO_EXPEDIENTE,
   GUIA_NOMBRES,
+  MAX_INTENTOS_REENVIO,
   MODALIDAD,
   NIVELES_POSGRADO,
   PROGRAMAS_ESTUDIOS,
   ROL_A_MODALIDAD,
+  TIPOS_PROYECTO,
+  TIPO_PROYECTO_LABEL,
+  TIPO_PROYECTO_POR_CICLO,
   TIPO_TRAMITE,
+  UMBRAL_SIMILITUD_TITULO_DEFAULT,
   docInfo,
 } from './catalogos';
 import { CreateExpedienteDto } from './dto/create-expediente.dto';
 import { UpdateExpedienteDto } from './dto/update-expediente.dto';
 import { CambioTituloDto } from './dto/cambio-titulo.dto';
+import { ReenviarDto } from './dto/reenviar.dto';
 import { SubsanacionDto } from './dto/subsanacion.dto';
 import { UploadDocumentoDto } from './dto/upload-documento.dto';
 
@@ -346,6 +355,9 @@ export class ExpedientesService {
       codigoUnico: exp.codigoUnico,
       tituloProtocolo: exp.tituloProtocolo,
       tipoTramite: exp.tipoTramite,
+      // Observaciones 1 y 4 del Comité.
+      tipoProyecto: exp.tipoProyecto,
+      intentos: exp.intentos ?? 1,
       facultad: exp.facultad,
       investigadorId: exp.investigadorId,
       investigadorNombre,
@@ -408,6 +420,16 @@ export class ExpedientesService {
       programasEstudios: PROGRAMAS_ESTUDIOS,
       ciclos: CICLOS,
       nivelesPosgrado: NIVELES_POSGRADO,
+      // Observación 1: catálogo de tipo de proyecto + el mapa ciclo -> tipo
+      // que el formulario usa para PRESELECCIONAR (VII -> artículo, IX ->
+      // tesis). La preselección se aplica en el cliente y siempre es
+      // editable; el backend solo valida que el valor final esté en el
+      // catálogo.
+      tiposProyecto: TIPOS_PROYECTO.map((valor) => ({
+        valor,
+        label: TIPO_PROYECTO_LABEL[valor] ?? valor,
+      })),
+      tipoProyectoPorCiclo: TIPO_PROYECTO_POR_CICLO,
       documentosRequeridos: Object.fromEntries(
         Object.entries(DOCUMENTOS_REQUERIDOS).map(([m, docs]) => [m, docs.map((t) => docInfo(t))]),
       ),
@@ -505,6 +527,9 @@ export class ExpedientesService {
     if (dto.nivelPosgrado && !NIVELES_POSGRADO.includes(dto.nivelPosgrado)) {
       throw new BadRequestException('Nivel de posgrado no válido.');
     }
+    if (dto.tipoProyecto && !TIPOS_PROYECTO.includes(dto.tipoProyecto)) {
+      throw new BadRequestException('Tipo de proyecto no válido.');
+    }
 
     const autores = dto.autores ?? [];
     const nuevoId = await this.prisma.$transaction(async (tx) => {
@@ -512,6 +537,13 @@ export class ExpedientesService {
         data: {
           tituloProtocolo: dto.tituloProtocolo,
           tipoTramite: dto.tipoTramite || TIPO_TRAMITE.PROYECTO_NUEVO,
+          // Observación 1: el tipo de proyecto llega ya resuelto desde el
+          // formulario (preseleccionado por ciclo, o elegido a mano cuando el
+          // ciclo no determina uno). Si el cliente no lo manda, queda null y
+          // el expediente se puede completar después.
+          tipoProyecto: dto.tipoProyecto ?? null,
+          // Observación 4: primer envío del expediente.
+          intentos: 1,
           facultad: dto.facultad ?? null,
           modalidad,
           programaEstudios: dto.programaEstudios ?? null,
@@ -676,6 +708,9 @@ export class ExpedientesService {
     if (dto.nivelPosgrado && !NIVELES_POSGRADO.includes(dto.nivelPosgrado)) {
       throw new BadRequestException('Nivel de posgrado no válido.');
     }
+    if (dto.tipoProyecto && !TIPOS_PROYECTO.includes(dto.tipoProyecto)) {
+      throw new BadRequestException('Tipo de proyecto no válido.');
+    }
 
     // Editar datos del proyecto/autores solo tiene sentido mientras el
     // expediente no salió del escritorio del solicitante: una vez enviado, el
@@ -703,6 +738,11 @@ export class ExpedientesService {
       }
       if (dto.facultad !== undefined) {
         data.facultad = dto.facultad;
+      }
+      // Observación 1: el tipo de proyecto es corregible por el solicitante
+      // (la preselección por ciclo es solo una sugerencia).
+      if (dto.tipoProyecto !== undefined) {
+        data.tipoProyecto = dto.tipoProyecto || null;
       }
       if (dto.programaEstudios !== undefined) {
         data.programaEstudios = dto.programaEstudios || null;
@@ -793,7 +833,114 @@ export class ExpedientesService {
     return { message: 'Proyecto eliminado' };
   }
 
+  // ==================== OBSERVACIONES DEL COMITÉ (2026-09-07) ====================
+  //
+  // Estados que cuentan como "expediente vivo en el sistema" para comparar
+  // contra un envío nuevo. Un expediente `borrador` todavía no entró al
+  // circuito (nadie lo vio) y uno `archivado` ya salió: ninguno de los dos
+  // debe disparar alerta ni rechazo.
+  private readonly ESTADOS_ACTIVOS = [
+    ESTADO_EXPEDIENTE.ENVIADO,
+    ESTADO_EXPEDIENTE.EN_REVISION,
+    ESTADO_EXPEDIENTE.SUBSANACION,
+    ESTADO_EXPEDIENTE.APROBADO,
+    ESTADO_EXPEDIENTE.APROBADO_OBSERVACIONES,
+  ];
+
+  // Umbral de similitud de títulos (0..1). Configurable en la tabla
+  // `configuracion` porque el Comité aún no fijó el valor definitivo; si la
+  // clave no existe o tiene basura, se usa el default del catálogo (0.8).
+  private async leerUmbralSimilitud(): Promise<number> {
+    const guardado = await this.configService.leerConfig(CLAVE_UMBRAL_SIMILITUD);
+    const valor = guardado !== null ? Number(guardado) : NaN;
+    if (!Number.isFinite(valor) || valor <= 0 || valor > 1) {
+      return UMBRAL_SIMILITUD_TITULO_DEFAULT;
+    }
+    return valor;
+  }
+
+  // Trae los expedientes activos (excepto el propio `id`) con sus autores,
+  // que es el universo contra el que se compara un envío.
+  private async expedientesActivos(excluirId: number) {
+    return this.prisma.expediente.findMany({
+      where: {
+        id: { not: excluirId },
+        estado: { in: this.ESTADOS_ACTIVOS },
+      },
+      select: {
+        id: true,
+        codigoUnico: true,
+        tituloProtocolo: true,
+        ciclo: true,
+        facultad: true,
+        programaEstudios: true,
+        autores: { select: { apellidosNombres: true } },
+      },
+    });
+  }
+
+  // OBSERVACIÓN 3 — duplicado EXACTO (tras normalizar): mismo título, mismo
+  // conjunto de autores, mismo ciclo y misma facultad/programa. Los cuatro
+  // criterios deben coincidir; con que uno difiera, ya no es el mismo
+  // expediente y a lo sumo cae en la alerta de similitud.
+  private buscarDuplicadoExacto<T extends { id: number; codigoUnico: string | null; tituloProtocolo: string; ciclo: string | null; facultad: string | null; programaEstudios: string | null; autores: { apellidosNombres: string }[] }>(
+    exp: {
+      tituloProtocolo: string;
+      ciclo: string | null;
+      facultad: string | null;
+      programaEstudios: string | null;
+      autores: { apellidosNombres: string }[];
+    },
+    candidatos: T[],
+  ): T | null {
+    const titulo = normalizarTexto(exp.tituloProtocolo);
+    const autores = huellaAutores(exp.autores);
+    const ciclo = normalizarTexto(exp.ciclo);
+    const facultad = normalizarTexto(exp.facultad);
+    const programa = normalizarTexto(exp.programaEstudios);
+
+    // Un expediente sin autores cargados no puede considerarse "el mismo"
+    // que otro: la huella vacía haría coincidir cualquier par de títulos
+    // iguales de personas distintas.
+    if (!autores) return null;
+
+    return (
+      candidatos.find(
+        (c) =>
+          normalizarTexto(c.tituloProtocolo) === titulo &&
+          huellaAutores(c.autores) === autores &&
+          normalizarTexto(c.ciclo) === ciclo &&
+          normalizarTexto(c.facultad) === facultad &&
+          normalizarTexto(c.programaEstudios) === programa,
+      ) ?? null
+    );
+  }
+
+  // OBSERVACIÓN 2 — títulos SIMILARES por encima del umbral, ordenados de
+  // más a menos parecido.
+  private buscarSimilares<T extends { id: number; codigoUnico: string | null; tituloProtocolo: string }>(
+    titulo: string,
+    candidatos: T[],
+    umbral: number,
+  ): { expediente: T; similitud: number }[] {
+    return candidatos
+      .map((c) => ({ expediente: c, similitud: similitudTitulos(titulo, c.tituloProtocolo) }))
+      .filter((r) => r.similitud >= umbral)
+      .sort((a, b) => b.similitud - a.similitud);
+  }
+
+  private etiquetaExpediente(exp: { id: number; codigoUnico: string | null }): string {
+    return exp.codigoUnico ? `#${exp.codigoUnico}` : `#${exp.id}`;
+  }
+
   // POST /expedientes/{id}/enviar (routes.py:398-435).
+  //
+  // Ampliado con las observaciones 2 y 3 del Comité: antes de dar el envío
+  // por bueno se compara el expediente contra los que ya están activos.
+  //  - Duplicado exacto -> rechazo automático (`no_aprobado`), sin pasar por
+  //    revisión, y se notifica al solicitante.
+  //  - Título muy similar -> el envío CONTINÚA normal, y se notifica a
+  //    Secretaría para que lo mire.
   async enviar(id: number, user: CurrentUser) {
     const exp = await this.prisma.expediente.findUnique({
       where: { id },
@@ -834,6 +981,62 @@ export class ExpedientesService {
       });
     }
 
+    // El cambio de título es, por definición, un trámite sobre un proyecto
+    // que YA existe aprobado: compararlo contra los expedientes activos daría
+    // siempre "duplicado" del propio origen. Las observaciones 2 y 3 aplican
+    // solo a proyectos nuevos.
+    const aplicaControlDuplicados = exp.tipoTramite !== TIPO_TRAMITE.CAMBIO_TITULO;
+    const candidatos = aplicaControlDuplicados ? await this.expedientesActivos(id) : [];
+
+    // ---- OBSERVACIÓN 3: rechazo automático por duplicado exacto ----
+    const duplicado = aplicaControlDuplicados ? this.buscarDuplicadoExacto(exp, candidatos) : null;
+    if (duplicado) {
+      const etiqueta = this.etiquetaExpediente(duplicado);
+      const motivo = `Duplicado exacto del expediente ${etiqueta}: mismo título, mismos autores, mismo ciclo y mismo programa/facultad.`;
+
+      await this.prisma.$transaction(async (tx) => {
+        // Se le asigna igual su código formal: el expediente existe y queda
+        // registrado como rechazado, no desaparece del sistema.
+        let codigoUnico = exp.codigoUnico;
+        if (!codigoUnico) {
+          codigoUnico = await generarCodigoAnual(tx);
+          await tx.expediente.update({ where: { id }, data: { codigoUnico } });
+        }
+        await tx.expediente.update({ where: { id }, data: { fechaEnvio: new Date() } });
+        await actualizarEstado(tx, exp, ESTADO_EXPEDIENTE.NO_APROBADO, motivo);
+        await tx.bitacora.create({
+          data: {
+            expedienteId: id,
+            accion: 'Rechazo automático por duplicado exacto',
+            detalle: motivo,
+            usuarioId: user.id,
+          },
+        });
+        await tx.notificacion.create({
+          data: {
+            usuarioId: exp.investigadorId,
+            expedienteId: id,
+            titulo: 'Proyecto rechazado automáticamente (duplicado)',
+            mensaje: `Tu proyecto no fue admitido porque coincide exactamente con el expediente ${etiqueta} ya registrado. Si se trata de una corrección de ese proyecto, gestiónala desde el expediente original.`,
+            leida: false,
+          },
+        });
+      });
+
+      return {
+        message: motivo,
+        codigo: exp.codigoUnico,
+        rechazoAutomatico: true,
+        duplicadoDeId: duplicado.id,
+      };
+    }
+
+    // ---- OBSERVACIÓN 2: alerta de título similar (NO bloquea) ----
+    const umbral = aplicaControlDuplicados ? await this.leerUmbralSimilitud() : 1;
+    const similares = aplicaControlDuplicados
+      ? this.buscarSimilares(exp.tituloProtocolo, candidatos, umbral)
+      : [];
+
     const codigo = await this.prisma.$transaction(async (tx) => {
       // Asignar el código formal incremental del año recién al enviar.
       let codigoUnico = exp.codigoUnico;
@@ -854,7 +1057,62 @@ export class ExpedientesService {
       return codigoUnico;
     });
 
-    return { message: 'Expediente enviado exitosamente', codigo };
+    let alertaSimilitud: { expedienteId: number; codigo: string | null; similitud: number } | null = null;
+    if (similares.length > 0) {
+      alertaSimilitud = await this.alertarSecretariaPorSimilitud(id, exp.tituloProtocolo, similares, umbral);
+    }
+
+    return { message: 'Expediente enviado exitosamente', codigo, alertaSimilitud };
+  }
+
+  // OBSERVACIÓN 2 — deja constancia en el historial del expediente y crea
+  // una notificación por cada usuaria con rol `secretaria` activa. Se hace
+  // FUERA de la transacción del envío a propósito: la alerta es informativa
+  // y su fallo no debe revertir un envío ya válido.
+  private async alertarSecretariaPorSimilitud(
+    expedienteId: number,
+    titulo: string,
+    similares: { expediente: { id: number; codigoUnico: string | null; tituloProtocolo: string }; similitud: number }[],
+    umbral: number,
+  ) {
+    const mejor = similares[0];
+    const etiqueta = this.etiquetaExpediente(mejor.expediente);
+    const porcentaje = Math.round(mejor.similitud * 100);
+    const detalle =
+      `Título similar (${porcentaje}%, umbral ${Math.round(umbral * 100)}%) al del expediente ${etiqueta}: ` +
+      `"${mejor.expediente.tituloProtocolo}".` +
+      (similares.length > 1 ? ` Hay ${similares.length - 1} coincidencia(s) adicional(es).` : '');
+
+    await this.prisma.historialExpediente.create({
+      data: {
+        expedienteId,
+        estadoAnterior: ESTADO_EXPEDIENTE.ENVIADO,
+        estadoNuevo: ESTADO_EXPEDIENTE.ENVIADO,
+        observaciones: `Alerta automática: ${detalle}`,
+      },
+    });
+
+    const secretarias = await this.prisma.user.findMany({
+      where: { rol: 'secretaria', NOT: { activo: false } },
+      select: { id: true },
+    });
+    if (secretarias.length > 0) {
+      await this.prisma.notificacion.createMany({
+        data: secretarias.map((s) => ({
+          usuarioId: s.id,
+          expedienteId,
+          titulo: 'Posible título similar a un expediente existente',
+          mensaje: `El proyecto "${titulo}" ingresó con un ${detalle}`,
+          leida: false,
+        })),
+      });
+    }
+
+    return {
+      expedienteId: mejor.expediente.id,
+      codigo: mejor.expediente.codigoUnico,
+      similitud: mejor.similitud,
+    };
   }
 
   // GET /expedientes/{id}/bitacora (routes.py:437-440).
@@ -913,27 +1171,166 @@ export class ExpedientesService {
       );
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.bitacora.create({
-        data: {
-          expedienteId: id,
-          accion: 'Subsanación respondida',
-          detalle: `Observaciones: ${dto.observaciones.slice(0, 200)}...`,
-          usuarioId: user.id,
-        },
-      });
-      // El expediente reingresa a la cola de revisión administrativa de
-      // secretaría, igual que un envío nuevo (mismo punto de entrada que
-      // `enviar`).
-      await actualizarEstado(tx, exp, ESTADO_EXPEDIENTE.ENVIADO, 'Subsanación reenviada por el investigador');
+    // OBSERVACIÓN 4: la subsanación es un reenvío como cualquier otro, así
+    // que consume un intento y respeta el tope de 3. Se delega en la misma
+    // rutina que `reenviar` para no tener dos caminos que reingresan un
+    // expediente a la cola con reglas distintas.
+    const intentos = await this.reingresarACola(exp, dto.observaciones, user, {
+      accionBitacora: 'Subsanación respondida',
+      observacionHistorial: 'Subsanación reenviada por el investigador',
     });
 
     return {
       mensaje: 'Subsanación registrada correctamente. El proyecto vuelve a la cola de revisión.',
       expedienteId: id,
       estado: exp.estado,
+      intentos,
       fechaSubsanacion: new Date(),
     };
+  }
+
+  // ==================== OBSERVACIÓN 4: REENVÍO CON TOPE DE 3 INTENTOS ====================
+
+  // Núcleo compartido por `reenviar` y `submitSubsanacion`: verifica el tope
+  // de intentos, incrementa el contador y devuelve el expediente a la cola de
+  // revisión (`enviado`), todo en una sola transacción. Devuelve el número de
+  // intento resultante.
+  //
+  // El chequeo de estado NO vive aquí: cada punto de entrada tiene el suyo
+  // (`subsanacion` exige estado SUBSANACION con su mensaje propio; `reenviar`
+  // acepta cualquier estado de ESTADOS_REENVIABLES).
+  private async reingresarACola(
+    exp: { id: number; estado: string | null; intentos: number | null },
+    observaciones: string,
+    user: CurrentUser,
+    textos: { accionBitacora: string; observacionHistorial: string },
+  ): Promise<number> {
+    const intentosActuales = exp.intentos ?? 1;
+    if (intentosActuales >= MAX_INTENTOS_REENVIO) {
+      throw new BadRequestException(
+        `Este proyecto ya agotó los ${MAX_INTENTOS_REENVIO} intentos permitidos. Debes iniciar un proyecto nuevo.`,
+      );
+    }
+    const nuevosIntentos = intentosActuales + 1;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.bitacora.create({
+        data: {
+          expedienteId: exp.id,
+          accion: textos.accionBitacora,
+          detalle: `Intento ${nuevosIntentos} de ${MAX_INTENTOS_REENVIO}. Observaciones levantadas: ${observaciones.slice(0, 500)}`,
+          usuarioId: user.id,
+        },
+      });
+      await actualizarEstado(
+        tx,
+        exp,
+        ESTADO_EXPEDIENTE.ENVIADO,
+        `${textos.observacionHistorial} (intento ${nuevosIntentos} de ${MAX_INTENTOS_REENVIO}): ${observaciones.slice(0, 500)}`,
+      );
+      await tx.expediente.update({
+        where: { id: exp.id },
+        data: { intentos: nuevosIntentos, fechaEnvio: new Date() },
+      });
+    });
+
+    return nuevosIntentos;
+  }
+
+  // POST /expedientes/{id}/reenviar. El solicitante levanta las observaciones
+  // de un expediente rechazado (`no_aprobado`) o observado (`subsanacion`) y
+  // lo devuelve a la cola, hasta un máximo de 3 envíos por expediente.
+  async reenviar(id: number, dto: ReenviarDto, user: CurrentUser) {
+    const exp = await this.prisma.expediente.findUnique({ where: { id } });
+    if (!exp) {
+      throw new NotFoundException('Expediente no encontrado');
+    }
+    // A diferencia de `submitSubsanacion` (que replica la falta de chequeo
+    // del Python de referencia), este endpoint es nuevo y sí valida dueño:
+    // reenviar consume un intento del expediente de otra persona.
+    if (exp.investigadorId !== user.id) {
+      throw new ForbiddenException('Solo el autor puede reenviar su proyecto.');
+    }
+    if (!ESTADOS_REENVIABLES.includes(exp.estado ?? '')) {
+      throw new BadRequestException(
+        'Solo puedes reenviar un proyecto que fue rechazado o que tiene observaciones por levantar.',
+      );
+    }
+
+    const intentos = await this.reingresarACola(exp, dto.observaciones, user, {
+      accionBitacora: 'Observaciones levantadas y proyecto reenviado',
+      observacionHistorial: 'Reenvío del solicitante tras levantar observaciones',
+    });
+
+    return {
+      mensaje: 'Proyecto reenviado. Vuelve a la cola de revisión del Comité.',
+      expedienteId: id,
+      estado: ESTADO_EXPEDIENTE.ENVIADO,
+      intentos,
+      intentosMaximos: MAX_INTENTOS_REENVIO,
+    };
+  }
+
+  // GET /expedientes/mis-rechazados. Vista "Mis proyectos rechazados": los
+  // expedientes PROPIOS que fueron rechazados o tienen observaciones, con las
+  // observaciones a levantar (historial de estado + evaluaciones) y si aún
+  // queda margen para reenviar.
+  async getMisRechazados(user: CurrentUser) {
+    const expedientes = await this.prisma.expediente.findMany({
+      where: {
+        investigadorId: user.id,
+        estado: { in: ESTADOS_REENVIABLES },
+      },
+      orderBy: { fechaEnvio: 'desc' },
+      include: {
+        historial: { orderBy: { createdAt: 'desc' } },
+        evaluaciones: { orderBy: { fechaEnvio: 'desc' } },
+      },
+    });
+
+    return expedientes.map((exp) => {
+      const intentos = exp.intentos ?? 1;
+      const puedeReenviar = intentos < MAX_INTENTOS_REENVIO;
+
+      const observaciones: { origen: string; texto: string; fecha: string | null }[] = [];
+      for (const h of exp.historial) {
+        if (!h.observaciones?.trim()) continue;
+        // Las alertas automáticas de similitud van dirigidas a Secretaría, no
+        // son observaciones que el solicitante deba levantar.
+        if (h.observaciones.startsWith('Alerta automática:')) continue;
+        observaciones.push({
+          origen: 'Comité / Secretaría',
+          texto: h.observaciones,
+          fecha: h.createdAt ? h.createdAt.toISOString() : null,
+        });
+      }
+      for (const ev of exp.evaluaciones) {
+        if (!ev.completa || !ev.observaciones?.trim()) continue;
+        observaciones.push({
+          origen: 'Evaluador',
+          texto: ev.observaciones,
+          fecha: ev.fechaEnvio ? ev.fechaEnvio.toISOString() : null,
+        });
+      }
+
+      return {
+        id: exp.id,
+        codigoUnico: exp.codigoUnico,
+        tituloProtocolo: exp.tituloProtocolo,
+        estado: exp.estado,
+        tipoProyecto: exp.tipoProyecto,
+        programaEstudios: exp.programaEstudios,
+        ciclo: exp.ciclo,
+        fechaEnvio: exp.fechaEnvio,
+        intentos,
+        intentosMaximos: MAX_INTENTOS_REENVIO,
+        puedeReenviar,
+        motivoBloqueo: puedeReenviar
+          ? null
+          : `Agotaste los ${MAX_INTENTOS_REENVIO} intentos de este proyecto. Para continuar debes registrar un proyecto nuevo.`,
+        observaciones,
+      };
+    });
   }
 
   // POST /expedientes/{id}/documentos (routes.py:447-573).

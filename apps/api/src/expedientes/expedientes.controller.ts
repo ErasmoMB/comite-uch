@@ -24,6 +24,7 @@ import type { ArchivoSubido } from './expedientes.service';
 import { CreateExpedienteDto } from './dto/create-expediente.dto';
 import { UpdateExpedienteDto } from './dto/update-expediente.dto';
 import { CambioTituloDto } from './dto/cambio-titulo.dto';
+import { ReenviarDto } from './dto/reenviar.dto';
 import { SubsanacionDto } from './dto/subsanacion.dto';
 import { UploadDocumentoDto } from './dto/upload-documento.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -61,6 +62,14 @@ export class ExpedientesController {
   @Get('elegibles-cambio-titulo')
   getElegiblesCambioTitulo(@Req() req: any) {
     return this.expedientesService.getElegiblesCambioTitulo(req.user);
+  }
+
+  // GET /expedientes/mis-rechazados — vista "Mis proyectos rechazados"
+  // (observación 4 del Comité). Ruta estática: debe declararse ANTES de
+  // `:id`, igual que `catalogos`/`elegibles-cambio-titulo`.
+  @Get('mis-rechazados')
+  getMisRechazados(@Req() req: any) {
+    return this.expedientesService.getMisRechazados(req.user);
   }
 
   // GET /expedientes/{id}/requisitos (routes.py:165-178).
@@ -217,6 +226,20 @@ export class ExpedientesController {
   // default de Nest a propósito: la Task 7 así lo especifica en su test de
   // referencia (`test/subsanacion.e2e-spec.ts`), aunque el Python real
   // tampoco declare `status_code` (-> 200 implícito ahí).
+  // POST /expedientes/{id}/reenviar — observación 4: el solicitante levanta
+  // las observaciones de un expediente rechazado/observado y lo devuelve a la
+  // cola, con tope de 3 envíos por expediente. 200 (no crea un recurso
+  // nuevo, transiciona uno existente), igual criterio que `enviar`.
+  @Post(':id/reenviar')
+  @HttpCode(HttpStatus.OK)
+  reenviar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ReenviarDto,
+    @Req() req: any,
+  ) {
+    return this.expedientesService.reenviar(id, dto, req.user);
+  }
+
   @Post(':id/subsanacion')
   submitSubsanacion(
     @Param('id', ParseIntPipe) id: number,

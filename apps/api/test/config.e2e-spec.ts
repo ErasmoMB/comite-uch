@@ -48,10 +48,29 @@ describe('Config (e2e, contra el schema "test" aislado, no producción)', () => 
   // que el flujo de expedientes.e2e-spec.ts:414 ("flujo completo: crear
   // (interno)..."): un solo documento obligatorio (proyecto_pdf) para la
   // modalidad interno.
+  // Cada fixture usa un título CLARAMENTE distinto de los anteriores (no un
+  // sufijo numérico) a propósito: desde que existen los controles de la
+  // observación 3 (rechazo automático por duplicado exacto) y la observación
+  // 2 (alerta de título similar), dos expedientes con el mismo título, los
+  // mismos autores, el mismo ciclo y el mismo programa ya no pueden enviarse
+  // ambos, y dos títulos casi idénticos dispararían una alerta a Secretaría.
+  // Este test va de la fecha límite, no de duplicados: se le da a cada
+  // expediente un tema propio para no cruzarse con esos controles.
+  const TITULOS_FIXTURE = [
+    'Adherencia al tratamiento antihipertensivo en adultos mayores de Lima Norte',
+    'Bioseguridad en laboratorios clinicos universitarios durante la practica preprofesional',
+    'Consumo de suplementos proteicos y funcion renal en deportistas amateur',
+    'Determinantes sociales del abandono del control prenatal en zonas periurbanas',
+    'Ergonomia del puesto de trabajo y lumbalgia en personal administrativo universitario',
+  ];
+  let secuenciaFixture = 0;
+
   async function crearExpedienteInternoCompleto(): Promise<number> {
+    const titulo = TITULOS_FIXTURE[secuenciaFixture % TITULOS_FIXTURE.length];
+    secuenciaFixture += 1;
     const exp = await prisma.expediente.create({
       data: {
-        tituloProtocolo: 'Proyecto interno para test de fecha límite',
+        tituloProtocolo: titulo,
         investigadorId,
         tipoTramite: 'proyecto_nuevo',
         modalidad: 'interno',
@@ -162,6 +181,10 @@ describe('Config (e2e, contra el schema "test" aislado, no producción)', () => 
   afterAll(async () => {
     await limpiarFechaLimite(prisma); // red de seguridad final
     if (expedienteIds.length > 0) {
+      // Enviar un expediente puede generar notificaciones (alerta de título
+      // similar a Secretaría, rechazo automático por duplicado): hay que
+      // borrarlas antes que el expediente al que apuntan.
+      await prisma.notificacion.deleteMany({ where: { expedienteId: { in: expedienteIds } } });
       await prisma.documento.deleteMany({ where: { expedienteId: { in: expedienteIds } } });
       await prisma.autorExpediente.deleteMany({ where: { expedienteId: { in: expedienteIds } } });
       await prisma.bitacora.deleteMany({ where: { expedienteId: { in: expedienteIds } } });

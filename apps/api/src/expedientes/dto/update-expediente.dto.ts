@@ -21,6 +21,13 @@ export class UpdateExpedienteDto {
   @IsString()
   tipoTramite?: string;
 
+  // Observación 1 del Comité: ARTICULO | TESIS | OTRO. Se valida contra el
+  // catálogo compartido en el servicio (mismo criterio que
+  // programaEstudios/ciclo/nivelPosgrado: el cliente manda el texto, no un id).
+  @IsOptional()
+  @IsString()
+  tipoProyecto?: string;
+
   @IsOptional()
   @IsString()
   facultad?: string;
