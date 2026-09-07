@@ -58,6 +58,10 @@ export interface ExpedienteDto {
   investigadorId: number
   investigadorNombre?: string | null
   tipoTramite: string | null
+  // Observación 1 del Comité: ARTICULO | TESIS | OTRO.
+  tipoProyecto: string | null
+  // Observación 4: envíos consumidos por este expediente (empieza en 1).
+  intentos: number | null
   facultad: string | null
   modalidad: string | null
   programaEstudios: string | null
@@ -136,11 +140,33 @@ export interface RequisitosDto {
   documentosRequeridos: TipoDocumentoInfo[]
 }
 
+// Un expediente rechazado/observado tal como lo devuelve
+// `GET /expedientes/mis-rechazados` (observación 4).
+export interface ExpedienteRechazadoDto {
+  id: number
+  codigoUnico: string | null
+  tituloProtocolo: string
+  estado: EstadoExpediente
+  tipoProyecto: string | null
+  programaEstudios: string | null
+  ciclo: string | null
+  fechaEnvio: string | null
+  intentos: number
+  intentosMaximos: number
+  puedeReenviar: boolean
+  motivoBloqueo: string | null
+  // Observaciones que el solicitante debe levantar: las del historial de
+  // estado más las que dejaron los evaluadores.
+  observaciones: { origen: string; texto: string; fecha: string | null }[]
+}
+
 export interface CatalogosDto {
   modalidad: string | null
   programasEstudios: string[]
   ciclos: string[]
   nivelesPosgrado: string[]
+  tiposProyecto: { valor: string; label: string }[]
+  tipoProyectoPorCiclo: Record<string, string>
   documentosRequeridos: Record<string, TipoDocumentoInfo[]>
   guiaNombres: GuiaNombresDto
   cambioTitulo: {

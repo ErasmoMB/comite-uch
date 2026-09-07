@@ -74,6 +74,67 @@ export const ESTADO_EXPEDIENTE = {
   ARCHIVADO: 'archivado',
 } as const
 
+// ==================== TIPO DE PROYECTO (observación 1 del Comité) ====================
+//
+// El Comité observó que el sistema no distinguía si lo que se somete a
+// evaluación ética es un ARTÍCULO de investigación o una TESIS. En pregrado
+// eso depende del ciclo en que va el estudiante: en VII se trabaja el
+// artículo y en IX la tesis. Los ciclos VIII y X (y cualquier rol interno)
+// quedan SIN preselección: el usuario elige a mano.
+
+export const TIPO_PROYECTO = {
+  ARTICULO: 'ARTICULO',
+  TESIS: 'TESIS',
+  OTRO: 'OTRO',
+} as const
+
+export type TipoProyecto = (typeof TIPO_PROYECTO)[keyof typeof TIPO_PROYECTO]
+
+export const TIPOS_PROYECTO: string[] = [
+  TIPO_PROYECTO.ARTICULO,
+  TIPO_PROYECTO.TESIS,
+  TIPO_PROYECTO.OTRO,
+]
+
+export const TIPO_PROYECTO_LABEL: Record<string, string> = {
+  [TIPO_PROYECTO.ARTICULO]: 'Artículo de investigación',
+  [TIPO_PROYECTO.TESIS]: 'Tesis',
+  [TIPO_PROYECTO.OTRO]: 'Otro',
+}
+
+// Preselección por ciclo. Devuelve `null` cuando NO hay criterio confirmado
+// por el Comité (ciclos VIII y X: duda abierta del spec) o cuando el usuario
+// no es un estudiante con ciclo.
+export const TIPO_PROYECTO_POR_CICLO: Record<string, string> = {
+  VII: TIPO_PROYECTO.ARTICULO,
+  IX: TIPO_PROYECTO.TESIS,
+}
+
+export function tipoProyectoPorCiclo(ciclo: string | null | undefined): string | null {
+  if (!ciclo) return null
+  return TIPO_PROYECTO_POR_CICLO[ciclo] ?? null
+}
+
+// ==================== SIMILITUD Y REENVÍO (observaciones 2, 3 y 4) ====================
+
+// Clave en la tabla `configuracion` con el umbral de similitud de títulos
+// (0..1) a partir del cual se alerta a Secretaría. Configurable porque el
+// Comité aún no fijó el valor definitivo (duda abierta del spec).
+export const CLAVE_UMBRAL_SIMILITUD = 'umbral_similitud_titulo'
+export const UMBRAL_SIMILITUD_TITULO_DEFAULT = 0.8
+
+// Tope de envíos por expediente: el original más 2 reenvíos. Al agotarlo, el
+// solicitante debe iniciar un proyecto nuevo.
+export const MAX_INTENTOS_REENVIO = 3
+
+// Estados desde los que un expediente puede volver a la cola de revisión
+// levantando observaciones. `aprobado_observaciones` queda fuera a propósito:
+// ese expediente YA está aprobado, sus observaciones no obligan a reenviar.
+export const ESTADOS_REENVIABLES: string[] = [
+  ESTADO_EXPEDIENTE.NO_APROBADO,
+  ESTADO_EXPEDIENTE.SUBSANACION,
+]
+
 // ==================== CATÁLOGOS ====================
 
 export const PROGRAMAS_ESTUDIOS = [
