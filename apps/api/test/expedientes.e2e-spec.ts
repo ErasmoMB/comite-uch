@@ -127,10 +127,25 @@ describe('validarCompletitud', () => {
       expect(faltantes).toEqual([]);
     });
 
-    it('integrante de cambio_titulo sin código de estudiante SÍ falta (a diferencia de la rama interno de proyecto_nuevo)', () => {
+    it('integrante de cambio_titulo interno (docente) sin código NO falta, igual que en proyecto_nuevo', () => {
       const faltantes = validarCompletitud({
         tipoTramite: 'cambio_titulo',
         modalidad: 'interno',
+        numeroActa: '1',
+        programaEstudios: 'Enfermería',
+        ciclo: 'Egresado',
+        tituloAnterior: 'Título viejo',
+        tituloNuevo: 'Título nuevo',
+        autores: [{ apellidosNombres: 'Perez Juan', correo: 'juan@uch.edu.pe' }],
+        documentos: [{ tipoDocumento: 'solicitud_cambio_titulo' }],
+      } as any);
+      expect(faltantes.some((f) => f.includes('código de estudiante'))).toBe(false);
+    });
+
+    it('integrante de cambio_titulo de pregrado sin código de estudiante SÍ falta', () => {
+      const faltantes = validarCompletitud({
+        tipoTramite: 'cambio_titulo',
+        modalidad: 'pregrado',
         numeroActa: '1',
         programaEstudios: 'Enfermería',
         ciclo: 'Egresado',
