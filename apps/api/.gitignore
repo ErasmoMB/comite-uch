@@ -30,3 +30,6 @@ prisma/*.db
 # tests
 /coverage
 /.nyc_output
+
+# Archivos locales (modo STORAGE_DRIVER=local)
+/almacenamiento

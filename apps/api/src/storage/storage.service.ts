@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { mkdir, readFile, writeFile } from 'fs/promises';
+import { dirname, join, resolve, sep } from 'path';
 import {
   S3Client,
   PutObjectCommand,
@@ -9,36 +11,49 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 /**
- * Cliente de almacenamiento de objetos (API S3-compatible).
+ * Almacenamiento de documentos.
  *
- * Apunta a Cloudflare R2. Cualquier proveedor S3-compatible funciona con solo
- * cambiar las variables R2_*.
+ * Por defecto apunta a Cloudflare R2 (API S3-compatible). Con
+ * `STORAGE_DRIVER=local` guarda los archivos en una carpeta del disco
+ * (`STORAGE_LOCAL_DIR`), para correr el sistema en un servidor propio sin R2.
+ *
+ * Cualquier proveedor S3-compatible funciona con solo cambiar las variables R2_*.
  */
 @Injectable()
 export class StorageService {
-  private client: S3Client;
+  private client?: S3Client;
+  private readonly local: boolean;
+  private readonly localRoot: string;
 
   constructor() {
-    this.client = new S3Client({
-      endpoint: process.env.R2_ENDPOINT,
-      // R2 expone una unica region logica, siempre "auto".
-      region: process.env.R2_REGION ?? 'auto',
-      credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-      },
-      // R2 (y varios S3-compatibles) requieren addressing por path, no
-      // virtual-hosted-style (bucket como subdominio).
-      forcePathStyle: true,
-    });
+    this.local = process.env.STORAGE_DRIVER === 'local';
+    this.localRoot = resolve(process.env.STORAGE_LOCAL_DIR ?? join(process.cwd(), 'almacenamiento'));
+
+    if (!this.local) {
+      this.client = new S3Client({
+        endpoint: process.env.R2_ENDPOINT,
+        // R2 expone una unica region logica, siempre "auto".
+        region: process.env.R2_REGION ?? 'auto',
+        credentials: {
+          accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+        },
+        // R2 (y varios S3-compatibles) requieren addressing por path, no
+        // virtual-hosted-style (bucket como subdominio).
+        forcePathStyle: true,
+      });
+    }
   }
 
   getClient() {
+    if (!this.client) {
+      throw new Error('getClient no está disponible con STORAGE_DRIVER=local');
+    }
     return {
       headObject: (params: { Bucket: string; Key: string }) =>
-        this.client.send(new HeadObjectCommand(params)),
+        this.client!.send(new HeadObjectCommand(params)),
       deleteObject: (params: { Bucket: string; Key: string }) =>
-        this.client.send(new DeleteObjectCommand(params)),
+        this.client!.send(new DeleteObjectCommand(params)),
     };
   }
 
@@ -56,12 +71,28 @@ export class StorageService {
     return key.replace(/\\/g, '/');
   }
 
+  // Ruta física de una key dentro de la carpeta local. Rechaza cualquier key
+  // que salga de esa carpeta (p. ej. con '..').
+  private localPath(key: string): string {
+    const path = resolve(this.localRoot, this.normalizeKey(key));
+    if (!path.startsWith(this.localRoot + sep)) {
+      throw new Error('Ruta de almacenamiento inválida');
+    }
+    return path;
+  }
+
   async putObject(
     key: string,
     body: Buffer,
     contentType: string,
   ): Promise<void> {
-    await this.client.send(
+    if (this.local) {
+      const path = this.localPath(key);
+      await mkdir(dirname(path), { recursive: true });
+      await writeFile(path, body);
+      return;
+    }
+    await this.client!.send(
       new PutObjectCommand({
         Bucket: this.getBucket(),
         Key: this.normalizeKey(key),
@@ -75,15 +106,21 @@ export class StorageService {
     key: string,
     expiresInSeconds = 3600,
   ): Promise<string> {
+    if (this.local) {
+      throw new Error('Las URL firmadas no están disponibles con STORAGE_DRIVER=local');
+    }
     return getSignedUrl(
-      this.client,
+      this.client!,
       new GetObjectCommand({ Bucket: this.getBucket(), Key: this.normalizeKey(key) }),
       { expiresIn: expiresInSeconds },
     );
   }
 
   async getObjectBuffer(key: string): Promise<Buffer> {
-    const resp = await this.client.send(
+    if (this.local) {
+      return readFile(this.localPath(key));
+    }
+    const resp = await this.client!.send(
       new GetObjectCommand({ Bucket: this.getBucket(), Key: this.normalizeKey(key) }),
     );
     const chunks: Uint8Array[] = [];
