@@ -42,16 +42,24 @@ body {
   color: var(--ink);
 }
 
-/* Marco móvil: pantalla completa en móvil, centrado a 430px en escritorio */
+/* Marco móvil: pantalla completa en escritorio, centrado a 430px en móvil.
+   El tope de 430px solo aplica bajo 500px -- páginas nuevas (ver
+   .dash-shell) pueden usar este contenedor directamente como grid de
+   escritorio sin necesitar el truco de position:fixed;inset:0 que usan
+   .desktop-shell/.d-auth-shell para escapar de este ancho. */
 .app {
-  max-width: 430px;
-  margin: 0 auto;
   min-height: 100dvh;
   background: var(--bg);
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 0 40px rgba(15, 23, 42, 0.15);
+}
+@media (max-width: 499px) {
+  .app {
+    max-width: 430px;
+    margin: 0 auto;
+    box-shadow: 0 0 40px rgba(15, 23, 42, 0.15);
+  }
 }
 
 .screen-body {
@@ -407,12 +415,13 @@ body {
 .muted { color: var(--slate-500); }
 .small { font-size: 12px; }
 
-/* ===== Escritorio (>=1024px): sidebar + topbar, contenido en paneles ===== */
+/* ===== Escritorio (>=768px): sidebar + topbar, contenido en paneles.
+   Entre 500 y 767px se ve la vista móvil a ancho completo (sin marco). ===== */
 
 .mobile-only { display: contents; }
 .desktop-shell { display: none; }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .mobile-only { display: none; }
   .mobile-only-block { display: none; }
 
@@ -691,7 +700,7 @@ body {
   z-index: 5;
   background: var(--bg);
 }
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .d-auth-shell { display: flex; align-items: stretch; }
 }
 .d-auth-hero {
@@ -726,7 +735,7 @@ body {
 .d-centered-shell {
   display: none;
 }
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .d-centered-shell {
     display: flex;
     position: fixed;
@@ -736,6 +745,77 @@ body {
     justify-content: center;
     background: var(--bg);
   }
+}
+
+/* ===== Dashboard: un solo árbol de contenido para móvil y escritorio =====
+   A diferencia de .mobile-only/.desktop-shell (que duplican TODO el markup
+   y por eso el navegador debe reconstruir layout+paint completos al cruzar
+   los 1024px -- eso es lo que se ve como el "flash" de la vista móvil),
+   acá el contenido pesado (cuenta regresiva, stats, recientes) se escribe
+   una sola vez y solo se reubica con grid-area. Lo único que se
+   monta/desmonta por breakpoint es la navegación (sidebar/topbar de
+   escritorio vs. topbar/bottom-nav de móvil), que es liviana y no genera
+   flash perceptible. */
+.dash-shell { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.dash-shell .d-sidebar,
+.dash-shell .d-topbar { display: none; }
+
+.dash-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 15px 16px 12px;
+}
+
+.dash-top-row { display: flex; flex-direction: column; gap: 14px; }
+
+.dash-countdown { background: linear-gradient(135deg, #08204a, #0b57b7); border-radius: 18px; padding: 15px 17px; color: #fff; }
+.dash-countdown-label { font-size: 13px; font-weight: 600; opacity: 0.85; margin-bottom: 10px; }
+.dash-countdown-body { display: flex; flex-direction: column; gap: 10px; }
+.dash-countdown-text { display: none; }
+.dash-countdown-boxes { display: flex; gap: 8px; }
+.dash-countdown-boxes > div { flex: 1; background: rgba(255, 255, 255, 0.15); border-radius: 10px; padding: 9px 0; text-align: center; }
+.dash-countdown-boxes .n { font-size: 22px; font-weight: 700; }
+.dash-countdown-boxes .l { font-size: 9px; font-weight: 600; opacity: 0.8; letter-spacing: 0.8px; }
+
+.dash-stats { display: flex; gap: 9px; }
+.dash-stats > div { flex: 1; padding: 11px 4px; text-align: center; }
+
+.dash-bottom-row { display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; }
+.dash-recientes { overflow: hidden; }
+.dash-recientes-head { display: flex; justify-content: space-between; align-items: center; padding: 13px 14px; border-bottom: 1px solid var(--line-soft); }
+.dash-quick-actions { padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+
+@media (min-width: 768px) {
+  .dash-shell {
+    display: grid;
+    grid-template-columns: 236px 1fr;
+    grid-template-rows: 64px 1fr;
+    grid-template-areas: "snav dtop" "snav content";
+    height: 100dvh;
+  }
+  .dash-shell > .topbar,
+  .dash-shell > .bottom-nav { display: none; }
+  .dash-shell .d-sidebar { display: flex; grid-area: snav; }
+  .dash-shell .d-topbar { display: flex; grid-area: dtop; }
+
+  .dash-content { grid-area: content; padding: 28px 32px; gap: 20px; min-width: 0; }
+
+  .dash-top-row { flex-direction: row; flex-wrap: wrap; gap: 20px; }
+  .dash-countdown { flex: 2 1 420px; min-width: 0; border-radius: 16px; padding: 22px 26px; display: flex; align-items: center; justify-content: space-between; }
+  .dash-countdown-label { margin-bottom: 6px; font-size: 12.5px; }
+  .dash-countdown-body { flex-direction: row; align-items: center; gap: 10px; }
+  .dash-countdown-text { display: block; font-size: 20px; font-weight: 700; }
+  .dash-countdown-boxes > div { flex: none; padding: 10px 16px; }
+
+  .dash-stats { flex: 1 1 260px; min-width: 0; gap: 10px; }
+  .dash-stats > div { padding: 14px 8px; display: flex; flex-direction: column; justify-content: center; }
+
+  .dash-bottom-row { flex-direction: row; flex-wrap: wrap; gap: 20px; }
+  .dash-recientes { flex: 2 1 420px; min-width: 0; display: flex; flex-direction: column; }
+  .dash-quick-actions { flex: 1 1 220px; min-width: 0; }
 }
 
 /* HBarChart: la columna de etiqueta/valor se angosta en celulares (<480px)
