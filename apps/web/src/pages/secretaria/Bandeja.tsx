@@ -16,6 +16,25 @@ import type { ExpedienteDto } from '../../types/api'
 // enviados, en revisión de fondo, o reingresados tras una subsanación.
 const ESTADOS_BANDEJA = ['enviado', 'en_revision', 'subsanacion'] as const
 
+// Observación 2 del Comité: aviso visible en la fila cuando el título se
+// pareció mucho a otro expediente al enviarse. Antes esto solo quedaba en el
+// historial y en una notificación que Secretaría no tenía forma de ver desde
+// la bandeja; ahora se pinta directo en la lista, sin tener que abrir nada.
+function AlertaTituloSimilar({ codigo, porcentaje }: { codigo: string; porcentaje: number | null }) {
+  return (
+    <span
+      title={`Título similar (${porcentaje ?? '—'}%) al del expediente ${codigo}`}
+      style={{ display: 'inline-flex', flex: 'none', cursor: 'help' }}
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+    </span>
+  )
+}
+
 export default function Bandeja() {
   const navigate = useNavigate()
   const { templateColumns: COLUMNAS, iniciarArrastre } = useColumnResize([90, 240, 170, 100, 130, 90])
@@ -167,9 +186,14 @@ export default function Bandeja() {
                 onClick={() => navigate(`/secretaria/revision/${e.id}`)}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 7 }}>
-                  <strong style={{ fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {e.tituloProtocolo}
-                  </strong>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                    <strong style={{ fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {e.tituloProtocolo}
+                    </strong>
+                    {e.alertaTituloSimilarCodigo && (
+                      <AlertaTituloSimilar codigo={e.alertaTituloSimilarCodigo} porcentaje={e.alertaTituloSimilarPorcentaje} />
+                    )}
+                  </span>
                   <StatusBadge estado={e.estado} />
                 </div>
                 <div style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--slate-500)', marginBottom: 4 }}>
@@ -255,7 +279,12 @@ export default function Bandeja() {
               {pendientes.map(e => (
                 <div key={e.id} className="d-table-row" style={{ gridTemplateColumns: COLUMNAS }}>
                   <span>{e.codigoUnico ?? '—'}</span>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.tituloProtocolo}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.tituloProtocolo}</span>
+                    {e.alertaTituloSimilarCodigo && (
+                      <AlertaTituloSimilar codigo={e.alertaTituloSimilarCodigo} porcentaje={e.alertaTituloSimilarPorcentaje} />
+                    )}
+                  </span>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12.5 }}>
                     {e.investigadorNombre ?? '—'}
                   </span>
