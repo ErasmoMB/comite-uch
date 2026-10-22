@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { mkdir, readFile, writeFile } from 'fs/promises';
+import { mkdir, readFile, rm, stat, writeFile } from 'fs/promises';
 import { dirname, join, resolve, sep } from 'path';
 import {
   S3Client,
@@ -47,7 +47,18 @@ export class StorageService {
 
   getClient() {
     if (!this.client) {
-      throw new Error('getClient no está disponible con STORAGE_DRIVER=local');
+      // Modo local: misma forma que el cliente S3 para que el código y las
+      // pruebas que usan headObject/deleteObject sigan funcionando igual.
+      return {
+        headObject: async (params: { Bucket: string; Key: string }) => {
+          const info = await stat(this.localPath(params.Key));
+          return { ContentLength: info.size };
+        },
+        deleteObject: async (params: { Bucket: string; Key: string }) => {
+          await rm(this.localPath(params.Key), { force: true });
+          return {};
+        },
+      };
     }
     return {
       headObject: (params: { Bucket: string; Key: string }) =>

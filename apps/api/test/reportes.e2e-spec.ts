@@ -281,10 +281,17 @@ describe('Reportes (e2e, contra el schema "test" aislado, no producción)', () =
 
       const ok = await request(app.getHttpServer())
         .get('/reportes/exportar')
-        .query({ tipo: 'estados' })
-        .set('Authorization', `Bearer ${tokenFor(coordinadorId)}`);
+        .query({ tipo: 'expedientes' })
+        .set('Authorization', `Bearer ${tokenFor(coordinadorId)}`)
+        .buffer(true)
+        .parse((res, cb) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (c: Buffer) => chunks.push(c));
+          res.on('end', () => cb(null, Buffer.concat(chunks)));
+        });
       expect(ok.status).toBe(200);
-      expect(ok.body).toEqual({ message: 'Reporte estados exportado', formato: 'csv' });
+      expect(ok.headers['content-type']).toContain('application/pdf');
+      expect((ok.body as Buffer).subarray(0, 4).toString()).toBe('%PDF');
     });
   });
 });
