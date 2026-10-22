@@ -358,6 +358,8 @@ export class ExpedientesService {
       // Observaciones 1 y 4 del Comité.
       tipoProyecto: exp.tipoProyecto,
       intentos: exp.intentos ?? 1,
+      alertaTituloSimilarCodigo: exp.alertaTituloSimilarCodigo,
+      alertaTituloSimilarPorcentaje: exp.alertaTituloSimilarPorcentaje,
       facultad: exp.facultad,
       investigadorId: exp.investigadorId,
       investigadorNombre,
@@ -1060,6 +1062,12 @@ export class ExpedientesService {
     let alertaSimilitud: { expedienteId: number; codigo: string | null; similitud: number } | null = null;
     if (similares.length > 0) {
       alertaSimilitud = await this.alertarSecretariaPorSimilitud(id, exp.tituloProtocolo, similares, umbral);
+    } else if (exp.alertaTituloSimilarCodigo) {
+      // Un reenvío sin parecidos no debe conservar la alerta de un envío anterior.
+      await this.prisma.expediente.update({
+        where: { id },
+        data: { alertaTituloSimilarCodigo: null, alertaTituloSimilarPorcentaje: null },
+      });
     }
 
     return { message: 'Expediente enviado exitosamente', codigo, alertaSimilitud };
@@ -1107,6 +1115,18 @@ export class ExpedientesService {
         })),
       });
     }
+
+    // Se guarda también en el propio expediente (no solo en el historial y
+    // la notificación) para que la bandeja de Secretaría pueda pintar un
+    // aviso en la fila sin tener que abrir cada expediente a leer su
+    // historial.
+    await this.prisma.expediente.update({
+      where: { id: expedienteId },
+      data: {
+        alertaTituloSimilarCodigo: etiqueta.replace(/^#/, ''),
+        alertaTituloSimilarPorcentaje: porcentaje,
+      },
+    });
 
     return {
       expedienteId: mejor.expediente.id,

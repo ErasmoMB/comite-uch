@@ -62,6 +62,11 @@ export interface ExpedienteDto {
   tipoProyecto: string | null
   // Observación 4: envíos consumidos por este expediente (empieza en 1).
   intentos: number | null
+  // Observación 2: título similar detectado al enviar. Presente solo si se
+  // disparó la alerta; se usa para pintar un aviso en la bandeja de
+  // Secretaría sin tener que abrir el expediente.
+  alertaTituloSimilarCodigo: string | null
+  alertaTituloSimilarPorcentaje: number | null
   facultad: string | null
   modalidad: string | null
   programaEstudios: string | null

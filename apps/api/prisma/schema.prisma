@@ -88,6 +88,15 @@ model Expediente {
   // MAX_INTENTOS_REENVIO (3). Nullable con default para que las filas
   // existentes no queden en NULL al empujar el cambio.
   intentos         Int?      @default(1)
+  // Observación 2: alerta de título similar detectada al enviar. Guardada
+  // desnormalizada (código de texto, no relación) porque es una instantánea
+  // del momento del envío -- no necesita seguir al expediente referenciado si
+  // este cambia después. Se usa para pintar un aviso en la bandeja de
+  // Secretaría sin tener que abrir el expediente; el propio filtro de estado
+  // de la bandeja (solo enviado/en_revision/subsanacion) hace que deje de
+  // mostrarse una vez que el expediente ya se resolvió.
+  alertaTituloSimilarCodigo     String? @map("alerta_titulo_similar_codigo") @db.VarChar(50)
+  alertaTituloSimilarPorcentaje Int?    @map("alerta_titulo_similar_pct")
   facultad         String?   @db.VarChar(255)
   modalidad        String?   @db.VarChar(30)
   programaEstudios String?   @map("programa_estudios") @db.VarChar(100)
